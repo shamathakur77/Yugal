@@ -4,7 +4,7 @@
    ============================================================= */
 
 /* Secondary tabs — these live in the More drawer, not the main nav */
-const SECONDARY_TABS = ['tracker','rsvp','budget','soul','panel-gallery','wishes'];
+const SECONDARY_TABS = ['decisions','tracker','rsvp','budget','panel-gallery','wishes'];
 
 /* Track drawer state */
 let moreDrawerOpen = false;
