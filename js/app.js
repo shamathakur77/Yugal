@@ -5,10 +5,34 @@
    on* handlers in index.html can reach them.
    ============================================================= */
 
+/* ---------- safe storage ----------
+   Some hosts (sandboxed preview iframes, private-mode browsers) throw the
+   moment we touch localStorage. We probe once and fall back to an in-memory
+   store so the whole app keeps working (it just won't persist across reloads
+   in those environments). On normal hosting / your phone, real localStorage
+   is used and everything persists exactly as before. window.LS is shared by
+   the other scripts (gallery.js) too. */
+var LS = (function(){
+  try{
+    var k='__wp_probe__';
+    window.localStorage.setItem(k,'1');
+    window.localStorage.removeItem(k);
+    return window.localStorage;
+  }catch(e){
+    var mem={};
+    return {
+      getItem:function(key){ return Object.prototype.hasOwnProperty.call(mem,key)?mem[key]:null; },
+      setItem:function(key,val){ mem[key]=String(val); },
+      removeItem:function(key){ delete mem[key]; }
+    };
+  }
+})();
+window.LS = LS;
+
 /* ---------- persisted state ---------- */
-let lang = localStorage.getItem('wp_lang') || 'en';
-let me   = localStorage.getItem('wp_me')   || null;
-let STATE = JSON.parse(localStorage.getItem('wp_state') || '{}');
+let lang = LS.getItem('wp_lang') || 'en';
+let me   = LS.getItem('wp_me')   || null;
+let STATE = (function(){ try{ return JSON.parse(LS.getItem('wp_state') || '{}'); }catch(e){ return {}; } })();
 
 /* Ensure every collection exists no matter what shape we loaded. */
 function normaliseState(){
@@ -24,8 +48,8 @@ normaliseState();
 
 /* localStorage is the source of truth; cloud sync layers on top. */
 function saveLocal(){
-  try{ localStorage.setItem('wp_state', JSON.stringify(STATE)); }
-  catch(e){ console.warn('localStorage save failed', e); }
+  try{ LS.setItem('wp_state', JSON.stringify(STATE)); }
+  catch(e){ console.warn('local save failed', e); }
 }
 
 
@@ -245,7 +269,54 @@ function renderStory(){
 <div class="sg2">${[3,6].map(i=>{const p=PHOTOS[i];return`<div class="sg-item" onclick="openLB(${i})"><img src="${p.b64}" loading="lazy" alt=""><div class="sg-cap">${p.captions[lang]||p.captions.en}</div></div>`;}).join('')}</div>
 <div class="sdivider"><span>☀️ ${T2("The Day After","अगले दिन","दुसऱ्या दिवशी")} ☀️</span></div>
 <div class="hscroll">${[8,9].map(i=>{const p=PHOTOS[i];return`<div class="hs-item" onclick="openLB(${i})"><img src="${p.b64}" loading="lazy" alt=""><div class="hs-cap">${p.captions[lang]||p.captions.en}</div></div>`;}).join('')}</div>
-<div class="story-blessing"><p>${T2('"Two families, two stories, one beginning. May this union be as bright as marigolds and as deep as the Godavari."','"दो परिवार, दो कहानियाँ, एक शुरुआत। गेंदे जैसा उज्ज्वल और गोदावरी जैसा गहरा हो।"','"दोन कुटुंबे, दोन कथा, एक सुरुवात. झेंडूसारखे तेजस्वी आणि गोदावरीसारखे खोल असो."')}</p></div>`;
+<div class="story-blessing"><p>${T2('"Two families, two stories, one beginning. May this union be as bright as marigolds and as deep as the Godavari."','"दो परिवार, दो कहानियाँ, एक शुरुआत। गेंदे जैसा उज्ज्वल और गोदावरी जैसा गहरा हो।"','"दोन कुटुंबे, दोन कथा, एक सुरुवात. झेंडूसारखे तेजस्वी आणि गोदावरीसारखे खोल असो."')}</p></div>
+<div class="sdivider"><span>✦ ${T2("Share","साझा करें","शेअर करा")} ✦</span></div>
+<div class="share-card">
+  <div class="share-title">${T[lang].shareTitle}</div>
+  <div class="share-sub">${T[lang].shareSub}</div>
+  <div class="qr-frame"><img src="./assets/yugal-qr.png" alt="QR" loading="lazy"><div class="qr-scan">📷 ${T[lang].shareScan}</div></div>
+  <div class="share-btns">
+    <button class="share-wa" onclick="shareWhatsApp()"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.7-.8-1.9-.9-.3-.1-.5-.1-.7.1-.2.3-.7.9-.9 1.1-.2.2-.3.2-.6.1-1.6-.8-2.7-1.4-3.7-3.2-.3-.5.3-.5.8-1.5.1-.2 0-.3 0-.5 0-.1-.7-1.6-.9-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.2.2 2.1 3.3 5.2 4.6 2.6 1.1 2.9.9 3.5.8.6-.1 1.7-.7 2-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.3zM12 2a10 10 0 0 0-8.5 15.3L2 22l4.8-1.5A10 10 0 1 0 12 2zm0 18c-1.5 0-3-.4-4.3-1.2l-.3-.2-2.9.9.9-2.8-.2-.3A8 8 0 1 1 12 20z"/></svg>${T[lang].shareWa}</button>
+    <button class="share-copy" id="copyBtn" onclick="copyAppLink()"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg><span>${T[lang].shareCopy}</span></button>
+  </div>
+</div>`;
+}
+
+/* ---------- share helpers ---------- */
+function appShareURL(){
+  // canonical home; falls back to wherever this is currently hosted
+  var u = (location.origin && location.origin.indexOf('http')===0) ? (location.origin + location.pathname) : 'https://yugal-beryl.vercel.app/';
+  return u.replace(/index\.html$/,'');
+}
+function shareWhatsApp(){
+  try{ if(window.playChime) playChime(); }catch(e){}
+  var msg = T[lang].shareMsg + ' ' + appShareURL();
+  if(navigator.share){
+    navigator.share({title:'YUGAL · Roma & Prashant', text:T[lang].shareMsg, url:appShareURL()}).catch(function(){
+      window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+    });
+  } else {
+    window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+  }
+}
+function copyAppLink(){
+  var url = appShareURL();
+  var btn = document.getElementById('copyBtn');
+  function done(){
+    if(!btn) return;
+    var span = btn.querySelector('span');
+    var old = span ? span.textContent : '';
+    if(span) span.textContent = T[lang].shareCopied;
+    btn.classList.add('copied');
+    try{ if(window.playChime) playChime(); }catch(e){}
+    setTimeout(function(){ if(span) span.textContent = old; btn.classList.remove('copied'); }, 1800);
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(done).catch(function(){ legacyCopy(url); done(); });
+  } else { legacyCopy(url); done(); }
+}
+function legacyCopy(text){
+  try{ var t=document.createElement('textarea'); t.value=text; t.style.position='fixed'; t.style.opacity='0'; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t); }catch(e){}
 }
 
 /* ---------- lightbox gallery ---------- */
@@ -297,14 +368,14 @@ function applyLang(){ document.body.className='lang-'+lang;
   const nw=document.getElementById('newWish'); if(nw) nw.placeholder=T[lang].addWish;
   document.getElementById('whoBtn').textContent=me?(T[lang].iam.replace('…','').trim()+' '+(T[lang].people[me]||me).split(' · ')[0]):T[lang].iam;
   buildWhoGrid(); renderAll(); if(document.getElementById('countdown')) renderCountdown(); }
-function setLang(l){ lang=l; localStorage.setItem('wp_lang',l); applyLang(); }
+function setLang(l){ lang=l; LS.setItem('wp_lang',l); applyLang(); }
 
 /* ---------- who-am-I picker ---------- */
 function buildWhoGrid(){ const g=document.getElementById('whoGrid');
   g.innerHTML=Object.keys(PEOPLE).map(k=>{ const p=PEOPLE[k]; const label=T[lang].people[k]||k;
     return `<button onclick="setMe('${k}')"><span class="swatch" style="background:${p.color}"></span>${label}</button>`;}).join(''); }
 function openWho(){ document.getElementById('whoModal').classList.remove('hide'); }
-function setMe(n){ me=n; localStorage.setItem('wp_me',n);
+function setMe(n){ me=n; LS.setItem('wp_me',n);
   document.getElementById('whoBtn').textContent=T[lang].iam.replace('…','').trim()+' '+(T[lang].people[n]||n).split(' · ')[0];
   document.getElementById('whoModal').classList.add('hide'); renderDecisions(); renderTodos(); }
 

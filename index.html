@@ -72,7 +72,7 @@
 </header>
 <main>
   <div id="cfgBanner" class="banner" style="display:none;"></div>
-  <section class="panel active" id="planner">
+  <section class="panel" id="planner">
     <!-- today's blessing card (populated by audio.js / blessing script) -->
     <div class="blessing-card" id="blessingCard">
       <div class="blessing-text serif" id="blessingText"></div>
@@ -99,7 +99,7 @@
     <div class="card"><div id="budgetList"></div><div class="budget-total"><span data-t="totalPlanned">Total planned</span><span id="bTotal">₹0</span></div></div>
   </section>
   <section class="panel" id="soul"></section>
-  <section class="panel" id="story"></section>
+  <section class="panel active" id="story"></section>
   <!-- gallery panel — built/managed entirely by js/gallery.js -->
   <section class="panel" id="panel-gallery"></section>
   <section class="panel" id="wishes">
@@ -108,14 +108,14 @@
   </section>
 </main>
 <nav id="navBar">
-  <button data-tab="planner" class="active" onclick="show('planner',this)"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span data-t="t_planner">Planner</span></button>
+  <button data-tab="story" class="active" onclick="show('story',this)"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M12 21s-7-4.5-9.5-9C1 9 2.5 5.5 6 5.5c2 0 3.2 1.2 4 2.5.8-1.3 2-2.5 4-2.5 3.5 0 5 3.5 3.5 6.5C19 16.5 12 21 12 21z"/></svg><span data-t="t_story">Story</span></button>
+  <button data-tab="planner" onclick="show('planner',this)"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span data-t="t_planner">Planner</span></button>
   <button data-tab="decisions" onclick="show('decisions',this)"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg><span data-t="t_decisions">Decisions</span></button>
   <button data-tab="vendors" onclick="show('vendors',this)"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg><span data-t="t_vendors">Vendors</span></button>
   <button data-tab="tracker" onclick="show('tracker',this)"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><span data-t="t_tracker">Tracker</span></button>
   <button data-tab="rsvp" onclick="show('rsvp',this)"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M7 15h2M13 15h4"/></svg><span>🎟️</span></button>
   <button data-tab="budget" onclick="show('budget',this)"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span data-t="t_budget">Budget</span></button>
   <button data-tab="soul" onclick="show('soul',this)"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M12 3l2.5 5 5.5.8-4 3.9.9 5.5L12 21l-4.9-2.8.9-5.5-4-3.9 5.5-.8z"/></svg><span data-t="t_soul">Soul</span></button>
-  <button data-tab="story" onclick="show('story',this)"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="5" rx="1"/><rect x="13" y="11" width="8" height="10" rx="1"/><rect x="3" y="14" width="8" height="7" rx="1"/></svg><span>Story</span></button>
   <!-- Gallery nav button is injected here by js/gallery.js, before Wishes -->
   <button data-tab="wishes" onclick="show('wishes',this)"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M12 21s-7-4.5-9.5-9C1 9 2.5 5.5 6 5.5c2 0 3.2 1.2 4 2.5.8-1.3 2-2.5 4-2.5 3.5 0 5 3.5 3.5 6.5C19 16.5 12 21 12 21z"/></svg><span data-t="t_wishes">Wishes</span></button>
 </nav>

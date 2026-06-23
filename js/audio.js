@@ -8,11 +8,13 @@
    #blessingCard at the top of the planner panel.
    ============================================================= */
 
-/* ----- placeholder track. The family will swap `url` for the real
-   shehnai/wedding recording later (any direct .mp3 URL works). ----- */
+/* ----- ambient wedding track: an authentic shehnai recording
+   (Ustad Bismillah Khan, CC BY-NC, Archive of Indian Music), trimmed
+   to a gentle ~80s loop with soft fades. Bundled locally so it works
+   offline and needs no network. Swap `url` for any direct .mp3 URL. -- */
 var TRACK = {
   name: "Shehnai Reverie",
-  url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+  url: "./assets/shehnai-ambient.mp3"
 };
 
 (function () {
