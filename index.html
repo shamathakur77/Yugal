@@ -1,0 +1,146 @@
+<!-- FILE: index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>YUGAL · Roma &amp; Prashant · 2026</title>
+<meta name="description" content="YUGAL — a trilingual wedding planner for Roma &amp; Prashant. Nashik &amp; Bharatpur, November 2026.">
+
+<!-- ===== Open Graph / social meta ===== -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="YUGAL">
+<meta property="og:title" content="YUGAL · Roma &amp; Prashant · 2026">
+<meta property="og:description" content="A trilingual wedding planner — checklist, RSVP, budget, vendors, family voting, wishes &amp; more. Nashik &amp; Bharatpur, November 2026.">
+<meta property="og:image" content="./icons/icon-512.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="YUGAL · Roma &amp; Prashant · 2026">
+<meta name="twitter:description" content="A trilingual wedding planner for Roma &amp; Prashant — November 2026.">
+<meta name="twitter:image" content="./icons/icon-512.png">
+
+<!-- ===== PWA / installable meta ===== -->
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#1a0f0a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="YUGAL">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+
+<!-- ===== fonts (Google Fonts CDN — display+editorial+mono+devanagari) ===== -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,600&family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Noto+Serif+Devanagari:wght@400;600;700&family=Noto+Sans+Devanagari:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!-- ===== styles ===== -->
+<link rel="stylesheet" href="./css/styles.css">
+
+<!-- ===== Supabase JS v2 (CDN). If this fails to load the app still
+        works fully offline via localStorage. ===== -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="lang-en">
+
+<!-- ===== entrance overlay (mandala + YUGAL wordmark, fades after 2.2s) ===== -->
+<div id="entranceOverlay">
+  <div id="entranceMandala"></div>
+  <div id="entranceWord">YUGAL</div>
+  <div id="entranceSub">Roma · Prashant · 2026</div>
+</div>
+
+<div class="petal-layer" id="petalLayer"></div>
+<div class="frameL" id="frameL"></div>
+<div class="frameR" id="frameR"></div>
+<header>
+  <div class="toran" id="toran"></div>
+  <div class="diya-glow"></div>
+  <div class="kicker" data-t="kicker">A MEETING OF TWO HOMES</div>
+  <h1 class="disp">YUGAL</h1>
+  <div class="sub">Roma &amp; Prashant · 2026</div>
+  <div class="countdown" id="countdown"></div>
+  <div class="header-reel" id="headerReel"></div>
+  <div class="controls">
+    <div class="lang-switch">
+      <button data-l="en" class="on" onclick="setLang('en')">EN</button>
+      <button data-l="hi" onclick="setLang('hi')">हिं</button>
+      <button data-l="mr" onclick="setLang('mr')">मरा</button>
+    </div>
+    <button class="whoBtn" id="whoBtn" onclick="openWho()" data-t="iam">I am …</button>
+  </div>
+  <div class="sync"><span class="dot" id="syncDot"></span><span id="syncTxt">…</span></div>
+</header>
+<main>
+  <div id="cfgBanner" class="banner" style="display:none;"></div>
+  <section class="panel active" id="planner">
+    <!-- today's blessing card (populated by audio.js / blessing script) -->
+    <div class="blessing-card" id="blessingCard">
+      <div class="blessing-text serif" id="blessingText"></div>
+      <div class="blessing-translation" id="blessingTranslation"></div>
+    </div>
+    <div id="progressStrip"></div><div id="plannerBody"></div>
+  </section>
+  <section class="panel" id="decisions"></section>
+  <section class="panel" id="vendors"></section>
+  <section class="panel" id="tracker">
+    <div class="addrow"><input id="newTodo" maxlength="120"><button onclick="addTodo()">+</button></div>
+    <div id="todoList"></div>
+  </section>
+  <section class="panel" id="rsvp">
+    <div class="rsvp-summary" id="rsvpSummary"></div>
+    <div class="rsvp-add">
+      <input id="rsvpName" placeholder="Guest name…" />
+      <button onclick="addGuest()">＋</button>
+    </div>
+    <div id="rsvpList"></div>
+  </section>
+  <section class="panel" id="budget">
+    <div class="addrow"><input id="bCat" maxlength="40" style="flex:2;"><input id="bAmt" maxlength="12" inputmode="numeric" style="flex:1.3;"><button onclick="addBudget()">+</button></div>
+    <div class="card"><div id="budgetList"></div><div class="budget-total"><span data-t="totalPlanned">Total planned</span><span id="bTotal">₹0</span></div></div>
+  </section>
+  <section class="panel" id="soul"></section>
+  <section class="panel" id="story"></section>
+  <!-- gallery panel — built/managed entirely by js/gallery.js -->
+  <section class="panel" id="panel-gallery"></section>
+  <section class="panel" id="wishes">
+    <div class="addrow"><input id="newWish" maxlength="160"><button onclick="addWish()">+</button></div>
+    <div id="wishList"></div>
+  </section>
+</main>
+<nav id="navBar">
+  <button data-tab="planner" class="active" onclick="show('planner',this)"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span data-t="t_planner">Planner</span></button>
+  <button data-tab="decisions" onclick="show('decisions',this)"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg><span data-t="t_decisions">Decisions</span></button>
+  <button data-tab="vendors" onclick="show('vendors',this)"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg><span data-t="t_vendors">Vendors</span></button>
+  <button data-tab="tracker" onclick="show('tracker',this)"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><span data-t="t_tracker">Tracker</span></button>
+  <button data-tab="rsvp" onclick="show('rsvp',this)"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M7 15h2M13 15h4"/></svg><span>🎟️</span></button>
+  <button data-tab="budget" onclick="show('budget',this)"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span data-t="t_budget">Budget</span></button>
+  <button data-tab="soul" onclick="show('soul',this)"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M12 3l2.5 5 5.5.8-4 3.9.9 5.5L12 21l-4.9-2.8.9-5.5-4-3.9 5.5-.8z"/></svg><span data-t="t_soul">Soul</span></button>
+  <button data-tab="story" onclick="show('story',this)"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="5" rx="1"/><rect x="13" y="11" width="8" height="10" rx="1"/><rect x="3" y="14" width="8" height="7" rx="1"/></svg><span>Story</span></button>
+  <!-- Gallery nav button is injected here by js/gallery.js, before Wishes -->
+  <button data-tab="wishes" onclick="show('wishes',this)"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M12 21s-7-4.5-9.5-9C1 9 2.5 5.5 6 5.5c2 0 3.2 1.2 4 2.5.8-1.3 2-2.5 4-2.5 3.5 0 5 3.5 3.5 6.5C19 16.5 12 21 12 21z"/></svg><span data-t="t_wishes">Wishes</span></button>
+</nav>
+<div class="modal" id="whoModal"><div class="mbox">
+  <h3 class="disp" data-t="whoTitle">Who's planning?</h3>
+  <p data-t="whoSub">Pick your name so your votes and ticks show for everyone. No sign-up.</p>
+  <div class="who" id="whoGrid"></div>
+</div></div>
+<div class="lightbox hide" id="lightbox"><button class="lb-close" onclick="closeLB()">&#x2715;</button><img class="lb-img" id="lbImg" src="" alt=""><div class="lb-cap" id="lbCap"></div><div class="lb-nav"><button onclick="navLB(-1)">&#x2039;</button><button onclick="navLB(1)">&#x203a;</button></div></div>
+
+<!-- ===== scripts — load order matters (no build step / no modules) =====
+     1. lang.js       trilingual string maps + SYNC_TXT
+     2. data.js       gallery PHOTOS (base64) data
+     3. supabase.js   isolated cloud layer (+ graceful offline fallback)
+     4. animations.js decorative builders + entrance + petals + effects
+     5. audio.js      ambient music toggle, chime/whoosh SFX, daily blessing
+     6. gallery.js    Gallery tab (illustrated scenes + photo upload)
+     7. app.js        core logic + bootstrap (runs on DOMContentLoaded)
+-->
+<script src="./js/lang.js"></script>
+<script src="./js/data.js"></script>
+<script src="./js/supabase.js"></script>
+<script src="./js/animations.js"></script>
+<script src="./js/audio.js"></script>
+<script src="./js/gallery.js"></script>
+<script src="./js/app.js"></script>
+</body>
+</html>
