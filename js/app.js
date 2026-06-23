@@ -435,7 +435,9 @@ function boot(){
   buildToran(); buildPetals(); buildFrames();
   buildHeaderReel();
   buildWhoGrid(); applyLang(); renderCountdown();
-  if(!me) openWho();
+  // FIX v2: WHO modal deferred — only fires when user taps an interactive tab.
+  // See nav.js hookWhoBtn + the IDENTITY_TABS list there.
+  // if(!me) openWho();  <-- disabled on first load
   initCloud();                                  // safe even with no network
   setInterval(renderCountdown, 60*60*1000);     // refresh "days to go" hourly
   const nt = document.getElementById('newTodo');
