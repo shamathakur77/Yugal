@@ -92,9 +92,18 @@ document.addEventListener('keydown', function(e) {
 /* ---- Skeleton loader hide on budget render -------------------- */
 (function hideBudgetSkeleton() {
   const skel = document.getElementById('budgetSkeleton');
+  const list = document.getElementById('budgetList');
   if (!skel) return;
-  /* Hide after short delay so real content has time to render */
-  setTimeout(function() { skel.classList.add('loaded'); }, 900);
+  // Hide as soon as budgetList has any content, or after max 1.5s
+  function checkAndHide() {
+    if (list && list.innerHTML.trim() !== '') { skel.classList.add('loaded'); return; }
+    skel.classList.add('loaded'); // fallback: always hide after observer/timeout
+  }
+  if (list) {
+    const obs = new MutationObserver(function() { skel.classList.add('loaded'); obs.disconnect(); });
+    obs.observe(list, { childList: true, subtree: true });
+  }
+  setTimeout(function() { skel.classList.add('loaded'); }, 1500);
 })();
 
 /* ---- Empty state hints ---------------------------------------- */

@@ -324,7 +324,9 @@ let lbIdx=0;
 function openLB(idx){lbIdx=idx;updateLB();document.getElementById('lightbox').classList.remove('hide');}
 function closeLB(){document.getElementById('lightbox').classList.add('hide');}
 function navLB(dir){lbIdx=(lbIdx+dir+PHOTOS.length)%PHOTOS.length;updateLB();}
-function updateLB(){const p=PHOTOS[lbIdx];document.getElementById('lbImg').src=p.b64;document.getElementById('lbCap').textContent=p.captions[lang]||p.captions.en;}
+function updateLB(){const p=PHOTOS[lbIdx];document.getElementById('lbImg').src=p.b64;document.getElementById('lbCap').textContent=p.captions[lang]||p.captions.en;
+  window._lbIdx=lbIdx; window._lbTotal=PHOTOS.length;
+  const counter=document.getElementById('lbCounter'); if(counter) counter.textContent=`${lbIdx+1} / ${PHOTOS.length}`;}
 
 /* FIX: lightbox keyboard + touch-swipe navigation.
    Arrow keys / Escape on desktop; horizontal swipe on touch devices.
@@ -366,7 +368,7 @@ function applyLang(){ document.body.className='lang-'+lang;
   document.querySelectorAll('.lang-switch button').forEach(b=>b.classList.toggle('on',b.dataset.l===lang));
   document.getElementById('newTodo').placeholder=T[lang].addTodo; document.getElementById('bCat').placeholder=T[lang].bCat; document.getElementById('bAmt').placeholder=T[lang].bAmt;
   const nw=document.getElementById('newWish'); if(nw) nw.placeholder=T[lang].addWish;
-  document.getElementById('whoBtn').textContent=me?(T[lang].iam.replace('…','').trim()+' '+(T[lang].people[me]||me).split(' · ')[0]):T[lang].iam;
+  document.getElementById('whoBtn').textContent=me?((T[lang].iam||'I am').replace('…','').trim()+' '+((T[lang].people&&T[lang].people[me])||me).split(' · ')[0]):(T[lang].iam||'I am …');
   buildWhoGrid(); renderAll(); if(document.getElementById('countdown')) renderCountdown(); }
 function setLang(l){ lang=l; LS.setItem('wp_lang',l); applyLang(); }
 
@@ -416,13 +418,13 @@ function delBudget(i){ STATE.budget.splice(i,1); commit(); renderBudget(); }
 
 /* ---------- panel switching ---------- */
 function show(id,btn){ document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active')); document.getElementById(id).classList.add('active');
-  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); window.scrollTo({top:0,behavior:'smooth'}); }
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active')); if(btn) btn.classList.add('active'); window.scrollTo({top:0,behavior:'smooth'}); }
 
 /* ---------- countdown ---------- */
 function renderCountdown(){
   const now=new Date(); const diff=WEDDING_DATE-now;
   const el=document.getElementById('countdown'); if(!el)return;
-  const days=Math.ceil(diff/(1000*60*60*24));
+  const days=Math.floor(diff/(1000*60*60*24));
   const word={en:days===1?'day to go':'days to go',hi:'दिन बाकी',mr:'दिवस बाकी'}[lang];
   if(days>0) el.innerHTML=`<span class="cd-num">${days}</span> ${word}`;
   else if(days===0) el.innerHTML={en:'✨ Today is the day ✨',hi:'✨ आज का दिन ✨',mr:'✨ आजचा दिवस ✨'}[lang];
