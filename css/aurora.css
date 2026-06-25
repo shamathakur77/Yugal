@@ -1,33 +1,32 @@
 /* =============================================================
-   aurora.css — YUGAL Dark Aurora UI (2026 king aesthetic)
-   Layers on top of styles.css + fixes.css + enhancements.css.
-   Zero breaking changes — purely additive overrides.
+   aurora.css — YUGAL Dark Aurora UI  v2
+   Fixes: header gap, reel height, body padding, Story intro,
+          nav height, mobile UX.
    ============================================================= */
 
 /* ── ROOT AURORA PALETTE ────────────────────────────────────── */
 :root {
-  --au-ink:        #f4e8cf;
-  --au-gold:       #e8c55a;
-  --au-gold-dim:   rgba(232,197,90,.22);
-  --au-teal:       #5fd4c4;
-  --au-rose:       #c46090;
-  --au-violet:     #7a5fc4;
-  --au-deep:       #05080a;
-  --au-glass:      rgba(255,255,255,0.055);
-  --au-glass-b:    rgba(255,255,255,0.10);
-  --au-border:     rgba(232,197,90,0.20);
-  --au-border-h:   rgba(232,197,90,0.38);
-  --au-blur:       20px;
-  --au-sat:        130%;
+  --au-ink:     #f4e8cf;
+  --au-gold:    #e8c55a;
+  --au-teal:    #5fd4c4;
+  --au-rose:    #c46090;
+  --au-violet:  #7a5fc4;
+  --au-deep:    #05080a;
+  --au-border:  rgba(232,197,90,0.20);
+  --au-border-h:rgba(232,197,90,0.38);
+  --au-blur:    20px;
+  --au-sat:     130%;
 }
 
-/* ── BODY — true deep-space base ───────────────────────────── */
+/* ── BODY ───────────────────────────────────────────────────── */
 body {
   background: #05080a !important;
   background-attachment: fixed !important;
+  /* FIXED: was 80px — reduced so content is closer to nav */
+  padding-bottom: 64px !important;
 }
 
-/* Animated full-viewport aurora layer behind everything */
+/* Animated full-viewport aurora */
 body::before {
   content: '';
   position: fixed;
@@ -44,41 +43,53 @@ body::before {
   animation: auroraShift 22s ease-in-out infinite alternate;
 }
 @keyframes auroraShift {
-  0%   { opacity: 1; filter: hue-rotate(0deg); }
-  33%  { opacity: .92; filter: hue-rotate(14deg); }
-  66%  { opacity: .96; filter: hue-rotate(-10deg); }
-  100% { opacity: 1; filter: hue-rotate(8deg); }
+  0%   { opacity:1; filter:hue-rotate(0deg); }
+  33%  { opacity:.92; filter:hue-rotate(14deg); }
+  66%  { opacity:.96; filter:hue-rotate(-10deg); }
+  100% { opacity:1; filter:hue-rotate(8deg); }
 }
-@media (prefers-reduced-motion: reduce) {
-  body::before { animation: none; }
-}
+@media (prefers-reduced-motion:reduce) { body::before { animation:none; } }
 
-/* Keep main content above aurora */
-.petal-layer, .frameL, .frameR, main, header, nav, #entranceOverlay,
-.more-drawer, .more-backdrop, .modal, .lightbox, #musicToggle { position: relative; z-index: 2; }
-body::before { z-index: 0; }
+/* Z-index stack */
+.petal-layer,.frameL,.frameR,main,header,nav,#entranceOverlay,
+.more-drawer,.more-backdrop,.modal,.lightbox,#musicToggle { position:relative; z-index:2; }
+body::before { z-index:0; }
 
-/* ── HEADER — aurora glow crown ────────────────────────────── */
+/* ── HEADER — compact, no gap ───────────────────────────────── */
 header {
   background: transparent !important;
-  padding-top: 48px !important;
+  /* FIXED: was 42px → much tighter on mobile */
+  padding: 28px 14px 8px !important;
 }
 
-/* Hero aurora spotlight behind YUGAL wordmark */
-header::after {
-  /* keep existing ✦ divider — just style the aurora spotlight via ao orbs */
-  z-index: 0;
+/* ── REEL — smaller so it doesn't eat screen ─────────────────── */
+/* FIXED: 88px reel frames → 60px; hides on very small phones */
+.reel-frame {
+  width: 52px !important;
+  height: 68px !important;
+  border-radius: 10px !important;
+}
+.header-reel {
+  margin: 4px 0 0 !important;
+  padding: 0 10px !important;
+}
+@media (max-width: 380px) {
+  /* Hide reel entirely on small phones to reclaim ~80px */
+  .header-reel { display: none !important; }
 }
 
+/* ── H1 gradient wordmark ───────────────────────────────────── */
 h1.disp {
-  font-size: 34px !important;
-  letter-spacing: 0.22em !important;
+  font-size: 28px !important;
+  letter-spacing: 0.18em !important;
   color: transparent !important;
   background: linear-gradient(135deg, #f4e0a0 0%, var(--au-gold) 40%, #e8a870 70%, #c46090 100%);
   -webkit-background-clip: text;
   background-clip: text;
   text-shadow: none !important;
-  filter: drop-shadow(0 0 18px rgba(232,197,90,0.35));
+  filter: drop-shadow(0 0 16px rgba(232,197,90,0.30));
+  /* Tighten vertical margins */
+  margin: 2px 0 1px !important;
 }
 body.lang-hi h1.disp, body.lang-mr h1.disp {
   background: none !important;
@@ -87,17 +98,133 @@ body.lang-hi h1.disp, body.lang-mr h1.disp {
   color: var(--au-gold) !important;
 }
 
+.kicker {
+  font-size: 8px !important;
+  letter-spacing: 2.5px !important;
+  margin-bottom: 0 !important;
+}
 .sub {
   color: rgba(232,197,90,0.7) !important;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
+  font-size: 13px !important;
+  margin: 0 !important;
 }
-
+.countdown {
+  margin-top: 4px !important;
+  font-size: 10px !important;
+}
 .countdown .cd-num {
   color: var(--au-teal) !important;
-  text-shadow: 0 0 12px rgba(93,212,196,0.45);
+  font-size: 16px !important;
+  text-shadow: 0 0 10px rgba(93,212,196,0.45);
+}
+.controls {
+  margin-top: 6px !important;
+  gap: 6px !important;
+}
+.sync {
+  margin-top: 4px !important;
 }
 
-/* ── GLASS CARDS — deep aurora glass ───────────────────────── */
+/* ── MAIN — tighter top padding ────────────────────────────── */
+main {
+  padding: 4px 12px 16px !important;
+}
+
+/* ── NAV — compact, glass pill ─────────────────────────────── */
+nav#navBar {
+  background: rgba(6,10,14,0.82) !important;
+  backdrop-filter: blur(24px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+  border-top: 1px solid rgba(232,197,90,0.15) !important;
+  box-shadow: 0 -1px 0 rgba(93,212,196,0.08), 0 -8px 32px rgba(0,0,0,0.4) !important;
+  /* FIXED: tighter padding so nav takes less vertical space */
+  padding: 4px 4px calc(4px + env(safe-area-inset-bottom)) !important;
+}
+nav#navBar button {
+  font-size: 8px !important;
+  padding: 4px 2px !important;
+  min-height: 44px; /* WCAG touch target */
+}
+nav#navBar button svg {
+  width: 20px !important;
+  height: 20px !important;
+}
+nav#navBar button.active {
+  color: var(--au-gold) !important;
+  text-shadow: 0 0 8px rgba(232,197,90,0.55);
+}
+nav#navBar button.active::after {
+  background: var(--au-gold) !important;
+  box-shadow: 0 0 6px rgba(232,197,90,0.8);
+  width: 5px !important;
+  height: 5px !important;
+}
+
+/* ── MUSIC TOGGLE — move up now nav is smaller ──────────────── */
+#musicToggle {
+  bottom: 68px !important;
+  background: rgba(6,10,14,0.82) !important;
+  border-color: rgba(232,197,90,0.40) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5), 0 0 12px rgba(232,197,90,0.15) !important;
+}
+#musicToggle.playing {
+  border-color: rgba(93,212,196,0.55) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5), 0 0 20px rgba(93,212,196,0.25) !important;
+}
+@media (min-width:760px) {
+  #musicToggle { right: calc(50% - 280px + 16px) !important; bottom: 68px !important; }
+}
+
+/* ── STORY TAB — reduce intro bloat ────────────────────────── */
+/* The SVG rangoli + tag + h2 + rule were 80px+ before first photo */
+#story > div:first-child {
+  padding: 8px 8px 0 !important;
+}
+.story-tag-dev {
+  font-size: 10px !important;
+  padding: 2px 10px !important;
+  margin-bottom: 4px !important;
+}
+.story-h2 {
+  font-size: 20px !important;
+  margin: 0 0 2px !important;
+}
+.story-rule {
+  margin: 6px 0 !important;
+}
+.sdivider {
+  margin: 8px 0 6px !important;
+}
+/* Tighten story blessing */
+.story-blessing {
+  padding: 10px !important;
+  margin: 8px 0 !important;
+  background: linear-gradient(135deg, rgba(196,96,144,0.07), rgba(122,95,196,0.07)) !important;
+  border-color: rgba(196,96,144,0.22) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+.story-blessing p {
+  font-size: 13px !important;
+}
+
+/* Photo scroll items — slightly shorter on mobile */
+.hs-item img { height: 140px !important; }
+@media (min-width:480px) { .hs-item img { height: 170px !important; } }
+
+/* ── PLANNER — tighten blessing card gap ───────────────────── */
+.blessing-card {
+  padding: 10px 14px !important;
+  margin-bottom: 8px !important;
+  background: linear-gradient(135deg, rgba(122,95,196,0.10) 0%, rgba(232,197,90,0.06) 100%) !important;
+  border-color: rgba(122,95,196,0.28) !important;
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+}
+.blessing-text { font-size: 15px !important; }
+
+/* ── CARDS — aurora glass ───────────────────────────────────── */
 .card {
   background: linear-gradient(
     135deg,
@@ -113,8 +240,6 @@ body.lang-hi h1.disp, body.lang-mr h1.disp {
     0 0 0 1px rgba(122,95,196,0.08) inset !important;
   border-radius: 18px !important;
 }
-
-/* Remove the old rangoli ::before strip from enhancements — keep glass clean */
 .card::before {
   background-image: none !important;
   background: linear-gradient(
@@ -123,15 +248,11 @@ body.lang-hi h1.disp, body.lang-mr h1.disp {
     rgba(255,255,255,0.05) 50%,
     transparent 80%
   ) !important;
-  top: 0 !important; left: 0 !important; right: 0 !important;
-  height: 100% !important;
-  opacity: 1 !important;
-  pointer-events: none;
-  z-index: 1;
+  top:0 !important; left:0 !important; right:0 !important;
+  height:100% !important; opacity:1 !important;
+  pointer-events:none; z-index:1;
 }
-
-/* Aurora tint on card hover */
-@media (hover: hover) {
+@media (hover:hover) {
   .card:hover {
     border-color: var(--au-border-h) !important;
     box-shadow:
@@ -141,7 +262,7 @@ body.lang-hi h1.disp, body.lang-mr h1.disp {
   }
 }
 
-/* ── OPT cards (decisions) ──────────────────────────────────── */
+/* ── OPT / RSVP / WISH / VENDOR ─────────────────────────────── */
 .opt {
   background: linear-gradient(135deg, rgba(255,255,255,0.065) 0%, rgba(255,255,255,0.025) 100%) !important;
   backdrop-filter: blur(16px) saturate(120%) !important;
@@ -153,8 +274,6 @@ body.lang-hi h1.disp, body.lang-mr h1.disp {
   border-color: rgba(93,212,196,0.40) !important;
   box-shadow: 0 0 0 1px rgba(93,212,196,0.15) inset !important;
 }
-
-/* ── RSVP / WISH / VENDOR cards ─────────────────────────────── */
 .rsvp-card, .wish, .rsvp-summary {
   background: linear-gradient(135deg, rgba(255,255,255,0.065) 0%, rgba(255,255,255,0.025) 100%) !important;
   backdrop-filter: blur(18px) saturate(var(--au-sat)) !important;
@@ -172,35 +291,15 @@ body.lang-hi h1.disp, body.lang-mr h1.disp {
   border-radius: 13px !important;
 }
 
-/* ── NAV — aurora glass pill ────────────────────────────────── */
-nav#navBar {
-  background: rgba(6,10,14,0.72) !important;
-  backdrop-filter: blur(24px) saturate(160%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
-  border-top: 1px solid rgba(232,197,90,0.15) !important;
-  box-shadow: 0 -1px 0 rgba(93,212,196,0.08), 0 -8px 32px rgba(0,0,0,0.4) !important;
-}
-
-/* Active tab — aurora gold glow */
-nav#navBar button.active {
-  color: var(--au-gold) !important;
-  text-shadow: 0 0 8px rgba(232,197,90,0.6);
-}
-nav#navBar button.active::after {
-  background: var(--au-gold) !important;
-  box-shadow: 0 0 6px rgba(232,197,90,0.8);
-  width: 5px !important;
-  height: 5px !important;
-}
-
-/* ── MORE DRAWER — aurora glass ─────────────────────────────── */
+/* ── MORE DRAWER ────────────────────────────────────────────── */
 .more-drawer-inner {
-  background: rgba(6,10,14,0.88) !important;
+  background: rgba(6,10,14,0.92) !important;
   backdrop-filter: blur(24px) saturate(160%) !important;
   -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
   border-top: 1px solid rgba(232,197,90,0.18) !important;
   border-radius: 24px 24px 0 0 !important;
 }
+.more-item { min-height: 56px; } /* touch target */
 .more-item:hover, .more-item:active {
   background: rgba(232,197,90,0.10) !important;
   color: var(--au-gold) !important;
@@ -208,47 +307,54 @@ nav#navBar button.active::after {
 .more-item.active { color: var(--au-gold) !important; }
 
 /* ── INPUTS — aurora glass ──────────────────────────────────── */
-.addrow input,
-.rsvp-add input,
-#newWish {
+.addrow input, .rsvp-add input, #newWish {
   background: rgba(255,255,255,0.05) !important;
   border-color: rgba(232,197,90,0.22) !important;
   backdrop-filter: blur(10px) !important;
   -webkit-backdrop-filter: blur(10px) !important;
   color: var(--au-ink) !important;
   border-radius: 13px !important;
+  /* FIXED: min-height for mobile touch comfort */
+  min-height: 44px;
+  font-size: 14px !important;
   transition: border-color 0.22s, box-shadow 0.22s;
 }
-.addrow input:focus,
-.rsvp-add input:focus,
-#newWish:focus {
+.addrow input:focus, .rsvp-add input:focus, #newWish:focus {
   border-color: rgba(93,212,196,0.55) !important;
   box-shadow: 0 0 0 3px rgba(93,212,196,0.12) !important;
   outline: none !important;
 }
-
 .addrow button, .rsvp-add button {
   background: linear-gradient(135deg, var(--au-teal), #3ab8a8) !important;
   color: #05080a !important;
   border-radius: 13px !important;
   box-shadow: 0 4px 16px rgba(93,212,196,0.30) !important;
   font-weight: 700;
+  /* FIXED: touch target */
+  min-height: 44px;
+  min-width: 44px;
 }
 
-/* ── VOTE BUTTON ────────────────────────────────────────────── */
+/* ── VOTE / STATUS BUTTONS ──────────────────────────────────── */
 .votebtn {
   border-color: rgba(93,212,196,0.45) !important;
   color: var(--au-teal) !important;
-  backdrop-filter: blur(8px) !important;
   border-radius: 20px !important;
+  min-height: 36px;
+  padding: 7px 16px !important;
 }
 .opt.voted .votebtn {
   background: rgba(93,212,196,0.18) !important;
   color: var(--au-teal) !important;
   border-color: var(--au-teal) !important;
 }
+.rc-status, .vstatus {
+  min-height: 34px;
+  padding: 6px 12px !important;
+  border-radius: 12px !important;
+}
 
-/* ── BAR GRADIENTS (decisions + compat) ─────────────────────── */
+/* ── BARS ────────────────────────────────────────────────────── */
 .bar > i {
   background: linear-gradient(90deg, var(--au-teal), var(--au-gold)) !important;
 }
@@ -256,12 +362,18 @@ nav#navBar button.active::after {
   background: linear-gradient(90deg, var(--au-violet), var(--au-teal), var(--au-gold)) !important;
 }
 
-/* ── PROGRESS RINGS ─────────────────────────────────────────── */
-.pring svg circle:last-of-type {
-  filter: drop-shadow(0 0 4px rgba(232,197,90,0.5));
+/* ── CHECKLIST ITEMS — bigger touch target ──────────────────── */
+.item {
+  padding: 11px 2px !important;
+  min-height: 44px;
+}
+.item .box {
+  width: 24px !important;
+  height: 24px !important;
+  min-width: 24px !important;
 }
 
-/* ── SOUL CARDS — tinted aurora glass ──────────────────────── */
+/* ── SOUL CARDS ─────────────────────────────────────────────── */
 .soul-card {
   background: linear-gradient(135deg, rgba(255,255,255,0.065) 0%, rgba(255,255,255,0.025) 100%) !important;
   backdrop-filter: blur(16px) !important;
@@ -271,45 +383,43 @@ nav#navBar button.active::after {
 .hd-block {
   background: linear-gradient(135deg, rgba(93,212,196,0.09), rgba(232,197,90,0.07)) !important;
   border-color: rgba(93,212,196,0.28) !important;
-  backdrop-filter: blur(14px) !important;
-  -webkit-backdrop-filter: blur(14px) !important;
+  backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important;
 }
 .soul-thread {
   background: linear-gradient(135deg, rgba(122,95,196,0.12), rgba(93,212,196,0.07)) !important;
   border-color: rgba(122,95,196,0.38) !important;
-  backdrop-filter: blur(14px) !important;
-  -webkit-backdrop-filter: blur(14px) !important;
+  backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important;
 }
 .soul-oneline {
   background: linear-gradient(135deg, rgba(232,197,90,0.07), rgba(196,96,144,0.06)) !important;
   border-color: rgba(232,197,90,0.25) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
+  backdrop-filter: blur(12px) !important; -webkit-backdrop-filter: blur(12px) !important;
 }
 .puja-border {
   background: linear-gradient(135deg, rgba(122,95,196,0.14), rgba(196,96,144,0.10)) !important;
   border-color: rgba(232,197,90,0.25) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
+  backdrop-filter: blur(12px) !important; -webkit-backdrop-filter: blur(12px) !important;
 }
-
-/* ── RASHI TILES ────────────────────────────────────────────── */
 .rashi-tile {
   background: linear-gradient(135deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.03) 100%) !important;
-  backdrop-filter: blur(14px) !important;
-  -webkit-backdrop-filter: blur(14px) !important;
+  backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important;
   border-color: var(--au-border) !important;
   border-radius: 14px !important;
 }
 
 /* ── WHO MODAL ──────────────────────────────────────────────── */
 .mbox {
-  background: rgba(6,10,14,0.90) !important;
+  background: rgba(6,10,14,0.92) !important;
   backdrop-filter: blur(28px) saturate(160%) !important;
   -webkit-backdrop-filter: blur(28px) saturate(160%) !important;
   border: 1px solid var(--au-border) !important;
   border-radius: 22px !important;
   box-shadow: 0 24px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(122,95,196,0.12) !important;
+}
+/* Who buttons — bigger touch targets */
+.who button {
+  min-height: 48px !important;
+  border-radius: 14px !important;
 }
 
 /* ── LIGHTBOX ───────────────────────────────────────────────── */
@@ -325,17 +435,29 @@ nav#navBar button.active::after {
   background: rgba(255,255,255,0.06) !important;
   border-color: rgba(232,197,90,0.25) !important;
   backdrop-filter: blur(10px) !important;
+  /* FIXED: bigger touch targets */
+  width: 48px !important;
+  height: 48px !important;
 }
 .lb-nav button:hover {
   background: rgba(232,197,90,0.12) !important;
   border-color: var(--au-gold) !important;
 }
+.lb-close {
+  /* FIXED: bigger touch target */
+  width: 44px !important;
+  height: 44px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
 
-/* ── ENTRANCE OVERLAY — aurora entrance ─────────────────────── */
+/* ── ENTRANCE OVERLAY ───────────────────────────────────────── */
 #entranceOverlay {
-  background: radial-gradient(ellipse 80% 60% at 50% 30%, rgba(122,95,196,0.35) 0%, transparent 60%),
-              radial-gradient(ellipse 60% 40% at 80% 70%, rgba(93,212,196,0.2) 0%, transparent 55%),
-              #05080a !important;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 30%, rgba(122,95,196,0.35) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 70%, rgba(93,212,196,0.2) 0%, transparent 55%),
+    #05080a !important;
 }
 #entranceWord {
   background: linear-gradient(135deg, #f4e0a0, var(--au-gold), #c46090);
@@ -358,18 +480,12 @@ nav#navBar button.active::after {
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;
   border-radius: 16px !important;
+  /* FIXED: bigger touch area */
+  padding: 28px 14px !important;
 }
 .hs-item, .sg-item {
   border-color: rgba(232,197,90,0.18) !important;
   box-shadow: 0 4px 16px rgba(0,0,0,0.4) !important;
-}
-
-/* ── BLESSING CARD ──────────────────────────────────────────── */
-.blessing-card {
-  background: linear-gradient(135deg, rgba(122,95,196,0.10) 0%, rgba(232,197,90,0.06) 100%) !important;
-  border-color: rgba(122,95,196,0.28) !important;
-  backdrop-filter: blur(18px) !important;
-  -webkit-backdrop-filter: blur(18px) !important;
 }
 
 /* ── SHARE CARD ─────────────────────────────────────────────── */
@@ -381,21 +497,10 @@ nav#navBar button.active::after {
   border-radius: 20px !important;
 }
 
-/* ── MUSIC TOGGLE ───────────────────────────────────────────── */
-#musicToggle {
-  background: rgba(6,10,14,0.82) !important;
-  border-color: rgba(232,197,90,0.40) !important;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.5), 0 0 12px rgba(232,197,90,0.15) !important;
-}
-#musicToggle.playing {
-  border-color: rgba(93,212,196,0.55) !important;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.5), 0 0 20px rgba(93,212,196,0.25) !important;
-}
-
-/* ── VENDOR STATUS CHIPS ────────────────────────────────────── */
-.s-wait    { background: rgba(232,197,90,0.12)  !important; color: var(--au-gold)  !important; }
-.s-replied { background: rgba(93,212,196,0.14)  !important; color: var(--au-teal)  !important; }
-.s-booked  { background: rgba(93,212,196,0.85)  !important; color: #05080a !important; font-weight: 700 !important; }
+/* ── VENDOR STATUS ──────────────────────────────────────────── */
+.s-wait    { background:rgba(232,197,90,0.12) !important; color:var(--au-gold)  !important; }
+.s-replied { background:rgba(93,212,196,0.14) !important; color:var(--au-teal)  !important; }
+.s-booked  { background:rgba(93,212,196,0.85) !important; color:#05080a !important; font-weight:700 !important; }
 
 /* ── LANG SWITCH ────────────────────────────────────────────── */
 .lang-switch {
@@ -404,21 +509,25 @@ nav#navBar button.active::after {
   backdrop-filter: blur(10px) !important;
   -webkit-backdrop-filter: blur(10px) !important;
 }
+.lang-switch button {
+  min-height: 30px !important;
+  padding: 5px 10px !important;
+}
 .lang-switch button.on,
 .lang-switch button[aria-pressed="true"] {
   background: linear-gradient(135deg, var(--au-gold), #e8a870) !important;
   color: #05080a !important;
 }
 
-/* ── SKIP LINK / WHO BADGE ──────────────────────────────────── */
-.who-badge {
+/* ── WHO BADGE ──────────────────────────────────────────────── */
+.whoBtn, .who-badge {
   background: rgba(255,255,255,0.05) !important;
   border-color: rgba(232,197,90,0.20) !important;
   backdrop-filter: blur(8px) !important;
+  min-height: 30px !important;
 }
-.who-badge:hover { background: rgba(232,197,90,0.10) !important; }
 
-/* ── SKELETON SHIMMER — aurora tint ─────────────────────────── */
+/* ── SKELETON ───────────────────────────────────────────────── */
 .skel-row {
   background: linear-gradient(90deg,
     rgba(122,95,196,0.07) 25%,
@@ -427,45 +536,38 @@ nav#navBar button.active::after {
   background-size: 200% 100% !important;
 }
 
-/* ── EMPTY STATE HINT ───────────────────────────────────────── */
+/* ── EMPTY STATE ────────────────────────────────────────────── */
 .empty-state-hint {
   background: rgba(122,95,196,0.05) !important;
   border-color: rgba(122,95,196,0.18) !important;
 }
 
-/* ── OWNER PILLS ────────────────────────────────────────────── */
-.owner {
-  backdrop-filter: blur(6px) !important;
-  border-radius: 13px !important;
-  font-size: 9.5px !important;
-}
+/* ── SCROLLBAR ──────────────────────────────────────────────── */
+::-webkit-scrollbar { width:4px; height:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:rgba(232,197,90,0.22); border-radius:4px; }
+::-webkit-scrollbar-thumb:hover { background:rgba(232,197,90,0.42); }
 
-/* ── STORY BLESSING ─────────────────────────────────────────── */
-.story-blessing {
-  background: linear-gradient(135deg, rgba(196,96,144,0.07), rgba(122,95,196,0.07)) !important;
-  border-color: rgba(196,96,144,0.22) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
-}
-
-/* ── SCROLLBAR — minimal aurora ─────────────────────────────── */
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(232,197,90,0.22); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(232,197,90,0.42); }
-
-/* ── DESKTOP BENTO HINT ─────────────────────────────────────── */
-@media (min-width: 760px) {
-  main { max-width: 580px; }
-  .rashi-row { grid-template-columns: 1fr 1fr; gap: 12px; }
-  .soul-cards { grid-template-columns: 1fr 1fr; gap: 12px; }
-  .soul-cards .soul-thread { grid-column: 1 / -1; }
-  .soul-cards .soul-oneline { grid-column: 1 / -1; }
-  .sg2 { gap: 12px; }
-}
-
-/* ── FOCUS VISIBLE — aurora ring ────────────────────────────── */
+/* ── FOCUS RING ─────────────────────────────────────────────── */
 button:focus-visible, input:focus-visible {
   outline: 2px solid rgba(93,212,196,0.7) !important;
   outline-offset: 2px;
+}
+
+/* ── DESKTOP ────────────────────────────────────────────────── */
+@media (min-width:760px) {
+  header { padding: 32px 16px 10px !important; }
+  main { max-width:580px; }
+  .reel-frame { width:60px !important; height:80px !important; }
+  .rashi-row { grid-template-columns:1fr 1fr; gap:12px; }
+  .soul-cards { grid-template-columns:1fr 1fr; gap:12px; }
+  .soul-cards .soul-thread, .soul-cards .soul-oneline { grid-column:1/-1; }
+}
+
+/* ── VERY SMALL PHONES (SE, Galaxy A etc) ───────────────────── */
+@media (max-width:360px) {
+  h1.disp { font-size:24px !important; }
+  .kicker { display:none !important; }
+  nav#navBar button { font-size:7px !important; }
+  nav#navBar button svg { width:18px !important; height:18px !important; }
 }
