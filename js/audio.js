@@ -14,7 +14,7 @@
    offline and needs no network. Swap `url` for any direct .mp3 URL. -- */
 var TRACK = {
   name: "Shehnai Reverie",
-  url: "./assets/shehnai-ambient.mp3"
+  url: "https://archive.org/download/BismillahKhan/01-Raag-Bhairav.mp3"
 };
 
 (function () {
