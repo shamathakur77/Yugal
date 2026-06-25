@@ -1,49 +1,1292 @@
--- ================================================================
--- YUGAL · Supabase Schema
--- Run this once in: Supabase Dashboard → SQL Editor → Run
--- ================================================================
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>YUGAL · Roma &amp; Prashant · Guest</title>
+<meta name="description" content="You're invited — Roma &amp; Prashant's wedding, December 2026. Nashik &amp; Bharatpur.">
+<meta property="og:title" content="YUGAL · You're Invited">
+<meta property="og:description" content="Roma &amp; Prashant · December 2026 · Nashik &amp; Bharatpur">
+<meta property="og:image" content="./icons/icon-512.png">
+<meta name="theme-color" content="#1a0f0a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="YUGAL">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+:root {
+  --bg:#1a0f0a; --surf:#241610; --surf2:#2e1c12;
+  --amber:#d4893a; --amber-dim:#9a5e22; --amber-glow:#f0c97a;
+  --text:#f5e8d4; --text-dim:#a08060;
+  --border:rgba(212,137,58,0.18); --border-warm:rgba(212,137,58,0.38);
+  --nashik:#c4785a; --bharatpur:#6a94c4;
+  --green:#5db87a; --red:#c47a7a;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;background:var(--bg);color:var(--text);
+  font-family:'Noto Sans Devanagari',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  overflow-x:hidden;}
 
--- RSVP table: one row per guest per event
-create table if not exists rsvps (
-  id          uuid primary key default gen_random_uuid(),
-  guest_name  text not null,
-  event_slug  text not null,   -- 'haldi' | 'marathi-wedding' | 'baraat' | 'all'
-  status      text not null check (status in ('attending', 'declined')),
-  created_at  timestamptz default now()
-);
+/* ── layout ── */
+#app{max-width:430px;margin:0 auto;min-height:100vh;
+  display:flex;flex-direction:column;position:relative;}
+.screen{display:none;flex:1;flex-direction:column;padding-bottom:72px;}
+.screen.active{display:flex;}
 
--- Memories table: metadata for uploaded photos
-create table if not exists memories (
-  id           uuid primary key default gen_random_uuid(),
-  guest_name   text not null,
-  caption      text,
-  event_tag    text,            -- 'haldi' | 'wedding' | 'baraat' | null
-  storage_path text not null,   -- path inside 'yugal-memories' bucket
-  created_at   timestamptz default now()
-);
+/* ── topbar ── */
+.topbar{display:flex;justify-content:space-between;align-items:center;
+  padding:14px 20px 10px;border-bottom:0.5px solid var(--border);
+  background:var(--bg);position:sticky;top:0;z-index:10;}
+.topbar-title{font-size:13px;font-weight:500;color:var(--text);}
+.topbar-back{display:flex;align-items:center;gap:6px;font-size:12px;
+  color:var(--amber-dim);cursor:pointer;background:none;border:none;}
+.topbar-back i{font-size:16px;}
+.lang-cycle{font-size:11px;color:var(--amber-dim);cursor:pointer;
+  background:none;border:none;letter-spacing:0.06em;}
 
--- RLS: anon guests can insert + read (no auth on guest app)
-alter table rsvps    enable row level security;
-alter table memories enable row level security;
+/* ── scroll body ── */
+.scroll-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 
-create policy "guests insert rsvps"  on rsvps    for insert to anon with check (true);
-create policy "guests read rsvps"    on rsvps    for select to anon using (true);
-create policy "guests insert memories" on memories for insert to anon with check (true);
-create policy "guests read memories"   on memories for select to anon using (true);
+/* ── section labels ── */
+.sec-label{font-size:10px;letter-spacing:0.14em;text-transform:uppercase;
+  color:var(--amber-dim);padding:16px 20px 8px;}
 
--- Storage bucket for photos (run separately if this errors)
-insert into storage.buckets (id, name, public)
-values ('yugal-memories', 'yugal-memories', true)
-on conflict (id) do nothing;
+/* ── bottom nav ── */
+.bottom-nav{display:flex;justify-content:space-around;
+  border-top:0.5px solid var(--border);padding:10px 0 max(20px,env(safe-area-inset-bottom));
+  background:var(--surf);position:fixed;bottom:0;left:0;right:0;
+  max-width:430px;margin:0 auto;z-index:20;}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;
+  cursor:pointer;flex:1;background:none;border:none;padding:0;}
+.nav-item i{font-size:22px;color:var(--text-dim);}
+.nav-item.active i{color:var(--amber);}
+.nav-label{font-size:9px;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim);}
+.nav-item.active .nav-label{color:var(--amber);}
+.nav-dot{width:4px;height:4px;border-radius:50%;background:var(--amber);
+  visibility:hidden;}
+.nav-item.active .nav-dot{visibility:visible;}
 
-create policy "anon upload photos" on storage.objects
-  for insert to anon
-  with check (bucket_id = 'yugal-memories');
+/* ── lang bar (home) ── */
+.lang-bar{display:flex;background:var(--surf);border-bottom:0.5px solid var(--border);}
+.lang-pill{padding:9px 16px;font-size:12px;color:var(--text-dim);cursor:pointer;
+  border-bottom:2px solid transparent;letter-spacing:0.04em;background:none;border-top:none;border-left:none;border-right:none;}
+.lang-pill.active{color:var(--amber);border-bottom:2px solid var(--amber);}
 
-create policy "public read photos" on storage.objects
-  for select to anon
-  using (bucket_id = 'yugal-memories');
+/* ── hero ── */
+.hero-block{padding:24px 24px 18px;border-bottom:0.5px solid var(--border);position:relative;}
+.hero-ornament{position:absolute;top:12px;right:20px;font-size:44px;
+  opacity:0.07;user-select:none;line-height:1;}
+.wedding-tag{font-size:10px;letter-spacing:0.14em;text-transform:uppercase;
+  color:var(--amber-dim);margin-bottom:8px;}
+.couple-names{font-size:28px;color:var(--amber-glow);line-height:1.2;font-weight:400;}
+.couple-names em{font-style:normal;color:var(--text-dim);font-size:18px;display:block;margin:2px 0;}
+.event-meta{margin-top:10px;display:flex;gap:16px;flex-wrap:wrap;}
+.meta-chip{font-size:11px;color:var(--text-dim);display:flex;align-items:center;gap:5px;}
+.meta-chip i{font-size:13px;color:var(--amber-dim);}
 
+/* ── countdown ── */
+.countdown-strip{margin:0 16px;background:var(--surf);border:0.5px solid var(--border);
+  border-radius:12px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;}
+.cd-label{font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);}
+.cd-nums{display:flex;gap:12px;}
+.cd-unit{text-align:center;}
+.cd-n{font-size:20px;font-weight:500;color:var(--amber-glow);line-height:1;}
+.cd-u{font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);margin-top:2px;}
+.cd-sep{font-size:18px;color:var(--border-warm);align-self:flex-start;padding-top:1px;}
 
--- Unique constraint so upsert works (guest can update their RSVP)
-alter table rsvps add constraint rsvps_guest_event_unique unique (guest_name, event_slug);
+/* ── name picker ── */
+.name-scroll{display:flex;flex-wrap:wrap;gap:8px;padding:0 20px;}
+.name-chip{background:var(--surf);border:0.5px solid var(--border);border-radius:20px;
+  padding:8px 16px;font-size:13px;color:var(--text-dim);cursor:pointer;
+  transition:all 0.15s;font-family:inherit;}
+.name-chip.selected{border-color:var(--amber);color:var(--amber-glow);background:rgba(212,137,58,0.08);}
+.name-hint{font-size:11px;color:var(--text-dim);padding:8px 20px 0;opacity:0.7;}
+.greeting-banner{margin:14px 16px 0;background:var(--surf);border:0.5px solid var(--border-warm);
+  border-radius:12px;padding:14px 16px;display:none;}
+.greeting-banner.visible{display:block;}
+.greeting-line{font-size:16px;color:var(--amber-glow);font-weight:500;margin-bottom:3px;}
+.greeting-sub{font-size:12px;color:var(--text-dim);}
+
+/* ── who cards ── */
+.who-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:0 16px;}
+.who-card{background:var(--surf);border:0.5px solid var(--border);border-radius:12px;
+  padding:14px;cursor:pointer;text-align:center;transition:border-color 0.15s;}
+.who-card:active{border-color:var(--border-warm);}
+.who-icon{font-size:22px;margin-bottom:6px;color:var(--amber-dim);}
+.who-role{font-size:12px;font-weight:500;color:var(--text);margin-bottom:2px;}
+.who-role-sub{font-size:10px;color:var(--text-dim);line-height:1.4;}
+
+/* ── ceremony cards ── */
+.event-cards{padding:0 16px;display:flex;flex-direction:column;gap:8px;}
+.ceremony-card{background:var(--surf);border:0.5px solid var(--border);
+  border-radius:14px;overflow:hidden;cursor:pointer;}
+.ceremony-card.accent{border-left:2.5px solid var(--amber);}
+.ceremony-header{display:flex;align-items:flex-start;gap:12px;padding:14px 16px 10px;}
+.ceremony-date{min-width:42px;text-align:center;flex-shrink:0;}
+.ceremony-date-num{font-size:24px;font-weight:500;color:var(--amber);line-height:1;}
+.ceremony-date-mon{font-size:9px;letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--text-dim);margin-top:2px;}
+.ceremony-main{flex:1;}
+.ceremony-name{font-size:15px;font-weight:500;color:var(--text);margin-bottom:2px;}
+.ceremony-name-local{font-size:11px;color:var(--text-dim);margin-bottom:6px;}
+.ceremony-meta-row{display:flex;gap:12px;flex-wrap:wrap;}
+.ceremony-meta{font-size:11px;color:var(--amber-dim);display:flex;align-items:center;gap:4px;}
+.ceremony-meta i{font-size:12px;}
+.ceremony-badge{font-size:9px;letter-spacing:0.07em;text-transform:uppercase;
+  padding:3px 8px;border-radius:20px;background:rgba(212,137,58,0.08);
+  color:var(--amber);border:0.5px solid rgba(212,137,58,0.22);
+  align-self:flex-start;margin-top:2px;white-space:nowrap;}
+.ceremony-detail{display:none;border-top:0.5px solid var(--border);
+  padding:12px 16px 14px;flex-direction:column;gap:10px;}
+.ceremony-detail.open{display:flex;}
+.detail-row{display:flex;gap:10px;align-items:flex-start;}
+.detail-icon{color:var(--amber-dim);font-size:14px;margin-top:1px;flex-shrink:0;}
+.detail-label{font-size:10px;letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--text-dim);margin-bottom:2px;}
+.detail-val{font-size:12px;color:var(--text);line-height:1.5;}
+.detail-note{font-size:11px;color:var(--amber-dim);margin-top:2px;}
+.swatch{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:middle;}
+
+/* ── rsvp ── */
+.rsvp-card{margin:0 16px;background:var(--surf);border:0.5px solid var(--border-warm);
+  border-radius:14px;padding:14px 16px;}
+.rsvp-title{font-size:13px;font-weight:500;color:var(--text);margin-bottom:10px;
+  display:flex;align-items:center;gap:6px;}
+.rsvp-title i{color:var(--amber);font-size:16px;}
+.rsvp-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+.rsvp-btn{border-radius:8px;padding:10px;font-size:12px;cursor:pointer;text-align:center;
+  border:0.5px solid var(--border-warm);color:var(--text-dim);background:transparent;
+  display:flex;flex-direction:column;align-items:center;gap:4px;font-family:inherit;
+  transition:all 0.15s;}
+.rsvp-btn i{font-size:18px;}
+.rsvp-btn.chosen{border-color:var(--amber);color:var(--amber-glow);background:rgba(212,137,58,0.08);}
+.rsvp-count{font-size:11px;color:var(--text-dim);text-align:center;margin-top:4px;}
+.attending-dot{display:inline-block;width:6px;height:6px;border-radius:50%;
+  background:var(--green);margin-right:4px;vertical-align:middle;}
+
+/* ── gift ── */
+.gift-card{margin:0 16px;background:var(--surf);border:0.5px solid var(--border);
+  border-radius:14px;padding:14px 16px;display:flex;gap:12px;}
+.gift-icon{color:var(--amber-dim);font-size:22px;flex-shrink:0;padding-top:2px;}
+.gift-title{font-size:13px;font-weight:500;color:var(--text);margin-bottom:3px;}
+.gift-body{font-size:12px;color:var(--text-dim);line-height:1.6;}
+
+/* ── family tree ── */
+.legend-bar{display:flex;gap:16px;padding:10px 20px;border-bottom:0.5px solid var(--border);}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-dim);}
+.legend-dot{width:8px;height:8px;border-radius:50%;}
+.filter-row{display:flex;gap:8px;padding:12px 16px;overflow-x:auto;}
+.filter-pill{padding:6px 14px;border-radius:20px;font-size:11px;cursor:pointer;white-space:nowrap;
+  background:var(--surf);border:0.5px solid var(--border);color:var(--text-dim);
+  font-family:inherit;transition:all 0.15s;}
+.filter-pill.active{border-color:var(--amber);color:var(--amber-glow);background:rgba(212,137,58,0.08);}
+.person-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;
+  padding:0 16px;margin-bottom:8px;}
+.person-card{background:var(--surf);border:0.5px solid var(--border);border-radius:12px;
+  padding:12px;cursor:pointer;transition:border-color 0.15s;}
+.person-card.nashik{border-left:2.5px solid var(--nashik);}
+.person-card.bharatpur{border-left:2.5px solid var(--bharatpur);}
+.person-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:13px;font-weight:500;margin-bottom:8px;}
+.av-nashik{background:rgba(196,120,90,0.25);color:var(--nashik);}
+.av-bharatpur{background:rgba(106,148,196,0.25);color:var(--bharatpur);}
+.person-name{font-size:13px;font-weight:500;color:var(--text);margin-bottom:2px;line-height:1.3;}
+.person-relation{font-size:11px;color:var(--text-dim);}
+.person-city{font-size:10px;color:var(--amber-dim);margin-top:3px;}
+.connector-line{height:0.5px;background:var(--border-warm);margin:4px 20px;}
+.connector-label{font-size:10px;color:var(--amber-dim);text-align:center;
+  letter-spacing:0.1em;padding:4px 0 8px;}
+.union-block{display:flex;align-items:center;margin:0 16px 4px;
+  background:var(--surf2);border:0.5px solid var(--border-warm);border-radius:14px;overflow:hidden;}
+.union-half{flex:1;padding:12px 14px;text-align:center;}
+.union-divider{width:0.5px;background:var(--border-warm);align-self:stretch;}
+.union-name{font-size:15px;font-weight:500;color:var(--amber-glow);}
+.union-sub{font-size:10px;color:var(--text-dim);margin-top:2px;}
+.union-heart{display:flex;align-items:center;justify-content:center;
+  width:32px;flex-shrink:0;color:var(--amber);font-size:18px;}
+.detail-overlay{display:none;margin:0 16px 12px;background:var(--surf2);
+  border:0.5px solid var(--border-warm);border-radius:12px;padding:14px 16px;}
+.detail-overlay.open{display:block;}
+.detail-overlay-name{font-size:15px;font-weight:500;color:var(--amber-glow);margin-bottom:4px;}
+.close-btn{float:right;font-size:12px;color:var(--amber-dim);cursor:pointer;
+  background:none;border:none;padding:2px 6px;}
+
+/* ── memories ── */
+.upload-zone{margin:16px;background:var(--surf);border:1px dashed var(--border-warm);
+  border-radius:14px;padding:28px 20px;text-align:center;cursor:pointer;
+  transition:border-color 0.2s;}
+.upload-zone:active{border-color:var(--amber);}
+.upload-icon{font-size:32px;color:var(--amber-dim);margin-bottom:10px;}
+.upload-title{font-size:14px;font-weight:500;color:var(--text);margin-bottom:4px;}
+.upload-sub{font-size:12px;color:var(--text-dim);line-height:1.5;}
+.upload-btn{display:inline-block;margin-top:14px;padding:9px 22px;border-radius:8px;
+  font-size:13px;border:0.5px solid var(--border-warm);color:var(--amber);
+  background:rgba(212,137,58,0.07);cursor:pointer;}
+.photo-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:0 16px;}
+.photo-card{background:var(--surf);border:0.5px solid var(--border);
+  border-radius:12px;overflow:hidden;cursor:pointer;}
+.photo-placeholder{height:110px;display:flex;align-items:center;justify-content:center;
+  font-size:28px;color:var(--amber-dim);position:relative;}
+.photo-badge{position:absolute;top:8px;left:8px;font-size:9px;letter-spacing:0.07em;
+  text-transform:uppercase;padding:3px 7px;border-radius:10px;
+  background:rgba(26,15,10,0.72);color:var(--amber);border:0.5px solid var(--border-warm);}
+.photo-info{padding:10px 10px 12px;}
+.photo-caption{font-size:12px;color:var(--text);margin-bottom:2px;font-weight:500;}
+.photo-meta{font-size:10px;color:var(--text-dim);}
+.photo-likes{display:flex;align-items:center;gap:4px;font-size:11px;
+  color:var(--amber-dim);margin-top:6px;cursor:pointer;background:none;border:none;font-family:inherit;}
+.photo-likes i{font-size:14px;}
+.photo-likes.liked{color:var(--amber);}
+.moment-card{margin:12px 16px 0;background:var(--surf);border:0.5px solid var(--border-warm);
+  border-radius:14px;padding:14px 16px;}
+.moment-head{font-size:10px;letter-spacing:0.12em;text-transform:uppercase;
+  color:var(--amber-dim);margin-bottom:8px;}
+.moment-msg{font-size:13px;color:var(--text);line-height:1.6;font-style:italic;}
+.moment-author{font-size:11px;color:var(--text-dim);margin-top:6px;}
+.add-wish-btn{margin:12px 16px 0;padding:12px;border-radius:12px;background:var(--surf);
+  border:0.5px solid var(--border);display:flex;align-items:center;gap:10px;
+  cursor:pointer;width:calc(100% - 32px);font-family:inherit;}
+.add-wish-btn i{font-size:20px;color:var(--amber-dim);}
+.add-wish-text{font-size:13px;color:var(--text-dim);}
+
+/* ── more ── */
+.install-card{margin:16px;background:var(--surf2);border:0.5px solid var(--border-warm);
+  border-radius:14px;padding:16px;}
+.install-icon{font-size:28px;color:var(--amber);margin-bottom:8px;}
+.install-title{font-size:14px;font-weight:500;color:var(--text);margin-bottom:4px;}
+.install-sub{font-size:12px;color:var(--text-dim);line-height:1.6;margin-bottom:12px;}
+.install-btn{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;
+  border-radius:8px;font-size:13px;background:var(--amber);color:var(--bg);
+  font-weight:500;cursor:pointer;border:none;font-family:inherit;transition:background 0.2s;}
+.install-btn.done{background:var(--green);}
+.travel-card{margin:0 16px 8px;background:var(--surf);border:0.5px solid var(--border);
+  border-radius:14px;overflow:hidden;}
+.travel-header{display:flex;align-items:center;gap:10px;padding:12px 14px;
+  border-bottom:0.5px solid var(--border);}
+.travel-header i{font-size:18px;color:var(--amber-dim);}
+.travel-header-title{font-size:13px;font-weight:500;color:var(--text);}
+.travel-row{display:flex;justify-content:space-between;align-items:flex-start;
+  padding:10px 14px;border-bottom:0.5px solid var(--border);}
+.travel-row:last-child{border-bottom:none;}
+.travel-label{font-size:11px;color:var(--text-dim);flex-shrink:0;min-width:70px;}
+.travel-val{font-size:12px;color:var(--text);text-align:right;flex:1;margin-left:12px;}
+.menu-group{padding:0 16px;display:flex;flex-direction:column;gap:6px;}
+.menu-row{display:flex;align-items:center;gap:12px;padding:13px 14px;
+  background:var(--surf);border:0.5px solid var(--border);border-radius:12px;
+  cursor:pointer;width:100%;font-family:inherit;text-align:left;transition:border-color 0.15s;}
+.menu-row:active{border-color:var(--border-warm);}
+.menu-icon{font-size:20px;color:var(--amber-dim);width:24px;text-align:center;flex-shrink:0;}
+.menu-body{flex:1;}
+.menu-title{font-size:13px;color:var(--text);font-weight:500;}
+.menu-sub{font-size:11px;color:var(--text-dim);margin-top:1px;}
+.menu-arrow{font-size:16px;color:var(--border-warm);}
+.toggle-wrap{width:38px;height:22px;border-radius:11px;background:var(--amber);
+  position:relative;flex-shrink:0;cursor:pointer;transition:background 0.15s;}
+.toggle-wrap.off{background:rgba(212,137,58,0.2);}
+.toggle-knob{width:16px;height:16px;border-radius:50%;background:#fff;
+  position:absolute;top:3px;right:3px;transition:right 0.15s,left 0.15s;}
+.toggle-wrap.off .toggle-knob{right:auto;left:3px;}
+.made-with{text-align:center;padding:16px 20px 4px;font-size:11px;color:var(--text-dim);letter-spacing:0.06em;}
+.made-with span{color:var(--amber-dim);}
+.gap{height:12px;}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ═══════════════════════════════════════════
+     SCREEN: HOME
+═══════════════════════════════════════════ -->
+<div class="screen active" id="screen-home">
+  <div class="topbar">
+    <div style="font-size:15px;font-weight:500;color:var(--amber-glow);letter-spacing:0.04em;">YUGAL</div>
+    <div class="topbar-title" id="home-title">You're invited</div>
+    <button class="lang-cycle" onclick="cycleLang()" aria-label="Switch language">EN · हि · म</button>
+  </div>
+
+  <div class="scroll-body">
+    <div class="lang-bar">
+      <button class="lang-pill active" onclick="setLang('en',this)">EN</button>
+      <button class="lang-pill" onclick="setLang('hi',this)">हिन्दी</button>
+      <button class="lang-pill" onclick="setLang('mr',this)">मराठी</button>
+    </div>
+
+    <div class="hero-block">
+      <div class="hero-ornament" aria-hidden="true">꩜</div>
+      <div class="wedding-tag" id="h-tag">Wedding Celebration</div>
+      <div class="couple-names">
+        Roma<em id="h-and">&amp;</em>Prashant
+      </div>
+      <div class="event-meta">
+        <div class="meta-chip"><i class="ti ti-calendar" aria-hidden="true"></i><span id="h-date">December 2026</span></div>
+        <div class="meta-chip"><i class="ti ti-map-pin" aria-hidden="true"></i><span id="h-loc">Nashik · Bharatpur</span></div>
+      </div>
+    </div>
+
+    <div class="sec-label" id="h-cd-label">Until the celebrations begin</div>
+    <div class="countdown-strip">
+      <div class="cd-label" id="cd-text">Counting</div>
+      <div class="cd-nums">
+        <div class="cd-unit"><div class="cd-n" id="cd-m">5</div><div class="cd-u" id="cd-ml">months</div></div>
+        <div class="cd-sep">·</div>
+        <div class="cd-unit"><div class="cd-n" id="cd-d">12</div><div class="cd-u" id="cd-dl">days</div></div>
+      </div>
+    </div>
+
+    <div class="sec-label" id="h-name-label">Who are you?</div>
+    <div class="name-scroll" id="name-chips">
+      <button class="name-chip" onclick="pickName(this,'Meena Auntie')">Meena Auntie</button>
+      <button class="name-chip" onclick="pickName(this,'Rahul Bhaiya')">Rahul Bhaiya</button>
+      <button class="name-chip" onclick="pickName(this,'Sonal Tai')">Sonal Tai</button>
+      <button class="name-chip" onclick="pickName(this,'Vishal Kaka')">Vishal Kaka</button>
+      <button class="name-chip" onclick="pickName(this,'Priya')">Priya</button>
+      <button class="name-chip" onclick="pickName(this,'Amit')">Amit</button>
+      <button class="name-chip" onclick="pickName(this,'Kavita Bua')">Kavita Bua</button>
+      <button class="name-chip" onclick="pickName(this,'Ankit')">Ankit</button>
+    </div>
+    <div class="name-hint" id="h-name-hint">Tap your name to personalize your view</div>
+
+    <div class="greeting-banner" id="greeting-banner">
+      <div class="greeting-line" id="greeting-line">Namaste!</div>
+      <div class="greeting-sub" id="greeting-sub">Roma and Prashant are so glad you're coming.</div>
+    </div>
+
+    <div class="sec-label" id="h-role-label">You are joining as</div>
+    <div class="who-grid">
+      <div class="who-card" onclick="goScreen('events')">
+        <div class="who-icon"><i class="ti ti-hand-stop" aria-hidden="true"></i></div>
+        <div class="who-role" id="wc-guest">Family Guest</div>
+        <div class="who-role-sub" id="wc-guest-sub">See events &amp; RSVP</div>
+      </div>
+      <div class="who-card" onclick="goScreen('more')">
+        <div class="who-icon"><i class="ti ti-map" aria-hidden="true"></i></div>
+        <div class="who-role" id="wc-travel">Travel &amp; stay</div>
+        <div class="who-role-sub" id="wc-travel-sub">Getting there</div>
+      </div>
+    </div>
+    <div class="gap"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN: EVENTS (guest view)
+═══════════════════════════════════════════ -->
+<div class="screen" id="screen-events">
+  <div class="topbar">
+    <button class="topbar-back" onclick="goScreen('home')"><i class="ti ti-arrow-left" aria-hidden="true"></i>Home</button>
+    <div class="topbar-title" id="ev-title">Ceremonies</div>
+    <button class="lang-cycle" onclick="cycleLang()">EN · हि · म</button>
+  </div>
+
+  <div class="scroll-body" style="padding-top:12px;">
+    <div class="event-cards">
+      <div class="ceremony-card accent" onclick="toggleDetail('c1')">
+        <div class="ceremony-header">
+          <div class="ceremony-date"><div class="ceremony-date-num">18</div><div class="ceremony-date-mon" id="ev-dec1">DEC</div></div>
+          <div class="ceremony-main">
+            <div class="ceremony-name" id="c1-name">Haldi &amp; Mehendi</div>
+            <div class="ceremony-name-local">हळद-मेहंदी · हलदी मेहंदी</div>
+            <div class="ceremony-meta-row">
+              <div class="ceremony-meta"><i class="ti ti-clock" aria-hidden="true"></i><span>4:00 PM onwards</span></div>
+              <div class="ceremony-meta"><i class="ti ti-map-pin" aria-hidden="true"></i><span id="c1-loc">Thakur Residence</span></div>
+            </div>
+          </div>
+          <div class="ceremony-badge">Nashik</div>
+        </div>
+        <div class="ceremony-detail" id="c1-detail">
+          <div class="detail-row">
+            <i class="ti ti-shirt detail-icon" aria-hidden="true"></i>
+            <div><div class="detail-label" id="ev-dress">Dress</div>
+            <div class="detail-val"><span class="swatch" style="background:#e8c14a;"></span><span id="c1-dress">Yellow &amp; turmeric tones</span></div>
+            <div class="detail-note" id="c1-dnote">Avoid white and black</div></div>
+          </div>
+          <div class="detail-row">
+            <i class="ti ti-info-circle detail-icon" aria-hidden="true"></i>
+            <div><div class="detail-label" id="ev-expect">What to expect</div>
+            <div class="detail-val" id="c1-desc">Haldi is applied to the bride by family. Mehendi artists in the courtyard — you're welcome to get your hands done too.</div></div>
+          </div>
+          <div class="detail-row">
+            <i class="ti ti-home detail-icon" aria-hidden="true"></i>
+            <div><div class="detail-label" id="ev-addr">Full address</div>
+            <div class="detail-val">14 Panchavati Marg, Nashik 422003</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ceremony-card" onclick="toggleDetail('c2')">
+        <div class="ceremony-header">
+          <div class="ceremony-date"><div class="ceremony-date-num">19</div><div class="ceremony-date-mon">DEC</div></div>
+          <div class="ceremony-main">
+            <div class="ceremony-name" id="c2-name">Marathi Wedding</div>
+            <div class="ceremony-name-local">मराठी विवाह सोहळा</div>
+            <div class="ceremony-meta-row">
+              <div class="ceremony-meta"><i class="ti ti-clock" aria-hidden="true"></i><span>7:30 AM — Muhurat</span></div>
+              <div class="ceremony-meta"><i class="ti ti-map-pin" aria-hidden="true"></i><span id="c2-loc">Mangal Karyalay</span></div>
+            </div>
+          </div>
+          <div class="ceremony-badge" id="c2-badge">Ritual</div>
+        </div>
+        <div class="ceremony-detail" id="c2-detail">
+          <div class="detail-row">
+            <i class="ti ti-shirt detail-icon" aria-hidden="true"></i>
+            <div><div class="detail-label">Dress</div>
+            <div class="detail-val"><span class="swatch" style="background:#c0392b;"></span><span id="c2-dress">Saree, kurta or ethnic — red &amp; green auspicious</span></div></div>
+          </div>
+          <div class="detail-row">
+            <i class="ti ti-info-circle detail-icon" aria-hidden="true"></i>
+            <div><div class="detail-label">What to expect</div>
+            <div class="detail-val" id="c2-desc">Muhurat begins early. Saptapadi, Mangalsutra, Antarpat. Breakfast and lunch at venue.</div></div>
+          </div>
+          <div class="detail-row">
+            <i class="ti ti-alert-circle detail-icon" aria-hidden="true"></i>
+            <div><div class="detail-label" id="ev-note">Gentle note</div>
+            <div class="detail-val" id="c2-note">Please be seated before 7:15 AM. The Antarpat moment is silent — phones down.</div></div>
+          </div>
+          <div class="detail-row">
+            <i class="ti ti-home detail-icon" aria-hidden="true"></i>
+            <div><div class="detail-label">Full address</div>
+            <div class="detail-val">Shree Sai Mangal Karyalay, College Road, Nashik 422005</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ceremony-card" onclick="toggleDetail('c3')">
+        <div class="ceremony-header">
+          <div class="ceremony-date"><div class="ceremony-date-num">22</div><div class="ceremony-date-mon">DEC</div></div>
+          <div class="ceremony-main">
+            <div class="ceremony-name" id="c3-name">Rajasthani Baraat</div>
+            <div class="ceremony-name-local">बारात · राजस्थानी विवाह</div>
+            <div class="ceremony-meta-row">
+              <div class="ceremony-meta"><i class="ti ti-clock" aria-hidden="true"></i><span>6:00 PM — Baraat</span></div>
+              <div class="ceremony-meta"><i class="ti ti-map-pin" aria-hidden="true"></i><span>Bharatpur</span></div>
+            </div>
+          </div>
+          <div class="ceremony-badge">Bharatpur</div>
+        </div>
+        <div class="ceremony-detail" id="c3-detail">
+          <div class="detail-row">
+            <i class="ti ti-shirt detail-icon" aria-hidden="true"></i>
+            <div><div class="detail-label">Dress</div>
+            <div class="detail-val"><span class="swatch" style="background:#e07b39;"></span><span id="c3-dress">Bandhani, leheriya, mirror-work. Men: sherwani or kurta.</span></div></div>
+          </div>
+          <div class="detail-row">
+            <i class="ti ti-info-circle detail-icon" aria-hidden="true"></i>
+            <div><div class="detail-label">What to expect</div>
+            <div class="detail-val" id="c3-desc">Groom arrives by horse. Dhol-baje procession. Pheras at Chaudhary Haveli courtyard. Dinner under open sky.</div></div>
+          </div>
+          <div class="detail-row">
+            <i class="ti ti-home detail-icon" aria-hidden="true"></i>
+            <div><div class="detail-label">Full address</div>
+            <div class="detail-val">Chaudhary Haveli, Lohamandi Road, Bharatpur 321001</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-label" id="ev-rsvp-label" style="margin-top:8px;">Are you coming?</div>
+    <div class="rsvp-card">
+      <div class="rsvp-title"><i class="ti ti-check" aria-hidden="true"></i><span id="ev-rsvp-q">Let Roma &amp; Prashant know</span></div>
+      <div class="rsvp-buttons">
+        <button class="rsvp-btn" id="btn-yes" onclick="rsvp('yes')">
+          <i class="ti ti-heart" aria-hidden="true"></i>
+          <span id="rsvp-yes-lbl">Yes, with joy</span>
+        </button>
+        <button class="rsvp-btn" id="btn-no" onclick="rsvp('no')">
+          <i class="ti ti-heart-broken" aria-hidden="true"></i>
+          <span id="rsvp-no-lbl">Can't make it</span>
+        </button>
+      </div>
+      <div class="rsvp-count" id="rsvp-count"><span class="attending-dot"></span>47 family members attending so far</div>
+    </div>
+
+    <div class="sec-label" id="ev-gift-label" style="margin-top:4px;">A note on gifts</div>
+    <div class="gift-card">
+      <div class="gift-icon"><i class="ti ti-gift" aria-hidden="true"></i></div>
+      <div>
+        <div class="gift-body" id="gift-body">Your presence is the blessing. If you wish to give, the family prefers shagun envelopes at the venue. No registry, no online links — just love brought in person.</div>
+      </div>
+    </div>
+    <div class="gap"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN: FAMILY
+═══════════════════════════════════════════ -->
+<div class="screen" id="screen-family">
+  <div class="topbar">
+    <button class="topbar-back" onclick="goScreen('home')"><i class="ti ti-arrow-left" aria-hidden="true"></i>Home</button>
+    <div class="topbar-title" id="fam-title">Family</div>
+    <button class="lang-cycle" onclick="cycleLang()">EN · हि · म</button>
+  </div>
+
+  <div class="scroll-body">
+    <div class="legend-bar">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--nashik);"></div><span id="fam-nashik-leg">Nashik side</span></div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--bharatpur);"></div><span id="fam-bharatpur-leg">Bharatpur side</span></div>
+    </div>
+    <div class="filter-row">
+      <button class="filter-pill active" onclick="filterFamily('all',this)" id="fp-all">Everyone</button>
+      <button class="filter-pill" onclick="filterFamily('nashik',this)" id="fp-nashik">Nashik</button>
+      <button class="filter-pill" onclick="filterFamily('bharatpur',this)" id="fp-bharatpur">Bharatpur</button>
+      <button class="filter-pill" onclick="filterFamily('elders',this)" id="fp-elders">Elders</button>
+    </div>
+
+    <div class="sec-label" id="fam-nashik-label">Thakur family · Nashik</div>
+    <div class="person-grid">
+      <div class="person-card nashik" data-side="nashik" data-elder="true"
+        onclick="showPerson('Late Sanjeev Thakur','Roma\'s father','Nashik','1954–2016. Remembered with love at every ceremony.','nashik')">
+        <div class="person-avatar av-nashik">ST</div>
+        <div class="person-name" id="p-sanjeev">Sanjeev Thakur</div>
+        <div class="person-relation" id="p-sanjeev-r">Roma's father</div>
+        <div class="person-city">In memory · 1954–2016</div>
+      </div>
+      <div class="person-card nashik" data-side="nashik" data-elder="true"
+        onclick="showPerson('Meena Thakur','Roma\'s mother','Nashik','Host of the Haldi ceremony. Contact for Nashik events.','nashik')">
+        <div class="person-avatar av-nashik">MT</div>
+        <div class="person-name">Meena Thakur</div>
+        <div class="person-relation" id="p-meena-r">Roma's mother</div>
+        <div class="person-city">Nashik</div>
+      </div>
+    </div>
+    <div class="person-grid">
+      <div class="person-card nashik" data-side="nashik"
+        onclick="showPerson('Shama','Roma\'s sister','Stockholm','Travelling from Stockholm. Attending all ceremonies.','nashik')">
+        <div class="person-avatar av-nashik">ST</div>
+        <div class="person-name">Shama</div>
+        <div class="person-relation">Roma's sister</div>
+        <div class="person-city">Stockholm</div>
+      </div>
+      <div class="person-card nashik" data-side="nashik"
+        onclick="showPerson('Rahul','Roma\'s brother','Nashik','Coordinating transport for Nashik guests. Call him for logistics.','nashik')">
+        <div class="person-avatar av-nashik">RT</div>
+        <div class="person-name">Rahul</div>
+        <div class="person-relation">Roma's brother</div>
+        <div class="person-city">Nashik</div>
+      </div>
+    </div>
+
+    <div class="connector-line"></div>
+    <div class="connector-label" id="fam-joining">joining in marriage</div>
+
+    <div class="union-block">
+      <div class="union-half"><div class="union-name">Roma</div><div class="union-sub">Thakur · Nashik</div></div>
+      <div class="union-heart"><i class="ti ti-heart" aria-hidden="true"></i></div>
+      <div class="union-divider"></div>
+      <div class="union-half"><div class="union-name">Prashant</div><div class="union-sub">Chaudhary · Bharatpur</div></div>
+    </div>
+
+    <div class="connector-line" style="margin-top:8px;"></div>
+
+    <div class="sec-label" id="fam-bharatpur-label">Chaudhary family · Bharatpur</div>
+    <div class="person-grid">
+      <div class="person-card bharatpur" data-side="bharatpur" data-elder="true"
+        onclick="showPerson('Ramesh Chaudhary','Prashant\'s father','Bharatpur','Head of the Chaudhary family. Baraat from Chaudhary Haveli.','bharatpur')">
+        <div class="person-avatar av-bharatpur">RC</div>
+        <div class="person-name">Ramesh Chaudhary</div>
+        <div class="person-relation">Prashant's father</div>
+        <div class="person-city">Bharatpur</div>
+      </div>
+      <div class="person-card bharatpur" data-side="bharatpur" data-elder="true"
+        onclick="showPerson('Sunita Chaudhary','Prashant\'s mother','Bharatpur','Hosting the Rajasthani reception. Welcomes all Nashik guests.','bharatpur')">
+        <div class="person-avatar av-bharatpur">SC</div>
+        <div class="person-name">Sunita Chaudhary</div>
+        <div class="person-relation">Prashant's mother</div>
+        <div class="person-city">Bharatpur</div>
+      </div>
+    </div>
+    <div class="person-grid">
+      <div class="person-card bharatpur" data-side="bharatpur"
+        onclick="showPerson('Ankit','Prashant\'s brother','Jaipur','Dhol coordinator for the baraat procession.','bharatpur')">
+        <div class="person-avatar av-bharatpur">AC</div>
+        <div class="person-name">Ankit</div>
+        <div class="person-relation">Prashant's brother</div>
+        <div class="person-city">Jaipur</div>
+      </div>
+      <div class="person-card bharatpur" data-side="bharatpur"
+        onclick="showPerson('Pooja','Prashant\'s sister','Delhi','Attending with husband Vikram from Delhi.','bharatpur')">
+        <div class="person-avatar av-bharatpur">PS</div>
+        <div class="person-name">Pooja</div>
+        <div class="person-relation">Prashant's sister</div>
+        <div class="person-city">Delhi</div>
+      </div>
+    </div>
+    <div class="gap"></div>
+  </div>
+
+  <div class="detail-overlay" id="person-detail">
+    <button class="close-btn" onclick="closePerson()"><i class="ti ti-x" aria-hidden="true"></i></button>
+    <div class="detail-overlay-name" id="pd-name"></div>
+    <div class="detail-row" style="margin-top:8px;"><i class="ti ti-user detail-icon" aria-hidden="true"></i><span id="pd-relation" style="font-size:12px;color:var(--text-dim);"></span></div>
+    <div class="detail-row" style="margin-top:6px;"><i class="ti ti-map-pin detail-icon" aria-hidden="true"></i><span id="pd-city" style="font-size:12px;color:var(--text-dim);"></span></div>
+    <div class="detail-row" style="margin-top:6px;"><i class="ti ti-info-circle detail-icon" aria-hidden="true"></i><span id="pd-note" style="font-size:12px;color:var(--text-dim);"></span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN: MEMORIES
+═══════════════════════════════════════════ -->
+<div class="screen" id="screen-memories">
+  <div class="topbar">
+    <button class="topbar-back" onclick="goScreen('home')"><i class="ti ti-arrow-left" aria-hidden="true"></i>Home</button>
+    <div class="topbar-title" id="mem-title">Memories</div>
+    <div style="font-size:11px;color:var(--amber-dim);">12 photos</div>
+  </div>
+
+  <div class="scroll-body">
+    <input type="file" id="photo-file-input" accept="image/*" style="display:none" onchange="handleUpload(event)">
+    <div class="upload-zone" onclick="document.getElementById('photo-file-input').click()" id="upload-zone">
+      <div class="upload-icon"><i class="ti ti-camera" aria-hidden="true"></i></div>
+      <div class="upload-title" id="up-title">Share a moment</div>
+      <div class="upload-sub" id="up-sub">Your photos go into a shared family album.<br>No social media. Just this family.</div>
+      <div class="upload-btn" id="up-btn">Add a photo</div>
+    </div>
+
+    <div class="filter-row">
+      <button class="filter-pill active" onclick="filterPhotos('all',this)">All moments</button>
+      <button class="filter-pill" onclick="filterPhotos('haldi',this)" id="fp-haldi">Haldi</button>
+      <button class="filter-pill" onclick="filterPhotos('wedding',this)" id="fp-wedding">Wedding</button>
+      <button class="filter-pill" onclick="filterPhotos('baraat',this)" id="fp-baraat">Baraat</button>
+    </div>
+
+    <div class="sec-label" id="mem-recent">Recently added</div>
+    <div class="photo-grid">
+      <div class="photo-card" data-tag="haldi">
+        <div class="photo-placeholder" style="background:rgba(212,137,58,0.1);">
+          <i class="ti ti-sun" aria-hidden="true"></i>
+          <div class="photo-badge">Haldi</div>
+        </div>
+        <div class="photo-info">
+          <div class="photo-caption">Morning light</div>
+          <div class="photo-meta">Meena Thakur · Dec 18</div>
+          <button class="photo-likes" id="like-1" onclick="toggleLike('like-1','lc-1')">
+            <i class="ti ti-heart" aria-hidden="true"></i><span id="lc-1">14</span>
+          </button>
+        </div>
+      </div>
+      <div class="photo-card" data-tag="haldi">
+        <div class="photo-placeholder" style="background:rgba(180,100,60,0.12);">
+          <i class="ti ti-hand-stop" aria-hidden="true"></i>
+          <div class="photo-badge">Mehendi</div>
+        </div>
+        <div class="photo-info">
+          <div class="photo-caption">Meena ki mehendi</div>
+          <div class="photo-meta">Sonal Tai · Dec 18</div>
+          <button class="photo-likes" id="like-2" onclick="toggleLike('like-2','lc-2')">
+            <i class="ti ti-heart" aria-hidden="true"></i><span id="lc-2">22</span>
+          </button>
+        </div>
+      </div>
+      <div class="photo-card" data-tag="wedding">
+        <div class="photo-placeholder" style="background:rgba(140,60,60,0.12);">
+          <i class="ti ti-flame" aria-hidden="true"></i>
+          <div class="photo-badge">Saptapadi</div>
+        </div>
+        <div class="photo-info">
+          <div class="photo-caption">Seven steps</div>
+          <div class="photo-meta">Rahul · Dec 19</div>
+          <button class="photo-likes" id="like-3" onclick="toggleLike('like-3','lc-3')">
+            <i class="ti ti-heart" aria-hidden="true"></i><span id="lc-3">41</span>
+          </button>
+        </div>
+      </div>
+      <div class="photo-card" data-tag="baraat">
+        <div class="photo-placeholder" style="background:rgba(60,80,140,0.12);">
+          <i class="ti ti-music" aria-hidden="true"></i>
+          <div class="photo-badge">Baraat</div>
+        </div>
+        <div class="photo-info">
+          <div class="photo-caption">Dhol waale</div>
+          <div class="photo-meta">Ankit · Dec 22</div>
+          <button class="photo-likes" id="like-4" onclick="toggleLike('like-4','lc-4')">
+            <i class="ti ti-heart" aria-hidden="true"></i><span id="lc-4">33</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="moment-card">
+      <div class="moment-head" id="mem-wish-head">A wish from family</div>
+      <div class="moment-msg">"Roma, you have always been the light of this home. Watching you walk towards your future, we carry your papa's blessings in every step."</div>
+      <div class="moment-author">— Meena Thakur</div>
+    </div>
+
+    <button class="add-wish-btn" id="add-wish-btn">
+      <i class="ti ti-pencil" aria-hidden="true"></i>
+      <div class="add-wish-text" id="mem-wish-btn">Leave a wish for Roma &amp; Prashant</div>
+    </button>
+    <div class="gap"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN: MORE
+═══════════════════════════════════════════ -->
+<div class="screen" id="screen-more">
+  <div class="topbar">
+    <button class="topbar-back" onclick="goScreen('home')"><i class="ti ti-arrow-left" aria-hidden="true"></i>Home</button>
+    <div class="topbar-title" id="more-title">More</div>
+    <button class="lang-cycle" onclick="cycleLang()">EN · हि · म</button>
+  </div>
+
+  <div class="scroll-body">
+    <div class="install-card">
+      <div class="install-icon"><i class="ti ti-device-mobile" aria-hidden="true"></i></div>
+      <div class="install-title" id="pwa-title">Add YUGAL to your home screen</div>
+      <div class="install-sub" id="pwa-sub">Install the app for easy access during the wedding — works offline, opens like any other app, no app store needed.</div>
+      <button class="install-btn" id="install-btn" onclick="installPWA()">
+        <i class="ti ti-download" aria-hidden="true"></i>
+        <span id="install-label">Install app</span>
+      </button>
+    </div>
+
+    <div class="sec-label" id="more-travel">Travel &amp; stay</div>
+    <div class="travel-card">
+      <div class="travel-header"><i class="ti ti-map-2" aria-hidden="true"></i><div class="travel-header-title" id="tr-nashik-head">Getting to Nashik (Dec 18–19)</div></div>
+      <div class="travel-row"><div class="travel-label" id="tr-airport">Airport</div><div class="travel-val">Ozar (ISK) · 25 km from venue</div></div>
+      <div class="travel-row"><div class="travel-label" id="tr-train">Train</div><div class="travel-val">Nashik Road Station · auto to Panchavati 20 min</div></div>
+      <div class="travel-row"><div class="travel-label" id="tr-stay">Stay</div><div class="travel-val">Thakur Residence for close family. Hotel Abhishek or Ginger Nashik for others.</div></div>
+    </div>
+
+    <div class="travel-card">
+      <div class="travel-header"><i class="ti ti-map-2" aria-hidden="true"></i><div class="travel-header-title" id="tr-bharatpur-head">Getting to Bharatpur (Dec 22)</div></div>
+      <div class="travel-row"><div class="travel-label">Airport</div><div class="travel-val">Agra (AGR) · 56 km, or Jaipur (JAI) · 180 km</div></div>
+      <div class="travel-row"><div class="travel-label">Train</div><div class="travel-val">Bharatpur Junction — direct from Agra, Delhi, Jaipur</div></div>
+      <div class="travel-row"><div class="travel-label" id="tr-bus">Group bus</div><div class="travel-val">Family bus from Nashik, Dec 21 at 6 AM. Contact Rahul to join.</div></div>
+    </div>
+
+    <div class="sec-label" id="more-prefs">Preferences</div>
+    <div class="menu-group">
+      <button class="menu-row" onclick="cycleLang()">
+        <i class="ti ti-language menu-icon" aria-hidden="true"></i>
+        <div class="menu-body"><div class="menu-title" id="pref-lang-title">Language</div><div class="menu-sub" id="pref-lang-val">English</div></div>
+        <i class="ti ti-chevron-right menu-arrow" aria-hidden="true"></i>
+      </button>
+      <button class="menu-row" onclick="toggleEl('notif-toggle')">
+        <i class="ti ti-bell menu-icon" aria-hidden="true"></i>
+        <div class="menu-body"><div class="menu-title" id="pref-notif">Ceremony reminders</div><div class="menu-sub" id="pref-notif-sub">Day-before gentle nudge</div></div>
+        <div class="toggle-wrap" id="notif-toggle"><div class="toggle-knob"></div></div>
+      </button>
+      <button class="menu-row" onclick="toggleEl('photo-toggle')">
+        <i class="ti ti-photo menu-icon" aria-hidden="true"></i>
+        <div class="menu-body"><div class="menu-title" id="pref-photos">Auto-save shared photos</div><div class="menu-sub" id="pref-photos-sub">Save family album to camera roll</div></div>
+        <div class="toggle-wrap off" id="photo-toggle"><div class="toggle-knob"></div></div>
+      </button>
+    </div>
+
+    <div class="sec-label" id="more-about">About</div>
+    <div class="menu-group">
+      <button class="menu-row" onclick="goScreen('events')">
+        <i class="ti ti-calendar-event menu-icon" aria-hidden="true"></i>
+        <div class="menu-body"><div class="menu-title" id="more-ceremonies">View all ceremonies</div><div class="menu-sub" id="more-ceremonies-sub">Dates, dress, what to expect</div></div>
+        <i class="ti ti-chevron-right menu-arrow" aria-hidden="true"></i>
+      </button>
+      <button class="menu-row" onclick="goScreen('family')">
+        <i class="ti ti-users menu-icon" aria-hidden="true"></i>
+        <div class="menu-body"><div class="menu-title" id="more-family">Family tree</div><div class="menu-sub" id="more-family-sub">Who's who on both sides</div></div>
+        <i class="ti ti-chevron-right menu-arrow" aria-hidden="true"></i>
+      </button>
+      <button class="menu-row">
+        <i class="ti ti-phone menu-icon" aria-hidden="true"></i>
+        <div class="menu-body"><div class="menu-title" id="more-help">Need help?</div><div class="menu-sub">Call Rahul · +91 98765 00123</div></div>
+        <i class="ti ti-chevron-right menu-arrow" aria-hidden="true"></i>
+      </button>
+      <a href="./index.html" class="menu-row" style="text-decoration:none;">
+        <i class="ti ti-layout-dashboard menu-icon" aria-hidden="true"></i>
+        <div class="menu-body"><div class="menu-title" id="more-planner">Full planner</div><div class="menu-sub" id="more-planner-sub">Coordinators &amp; couple view</div></div>
+        <i class="ti ti-chevron-right menu-arrow" aria-hidden="true"></i>
+      </a>
+    </div>
+
+    <div class="made-with">Made with love for <span>Roma &amp; Prashant</span> · December 2026</div>
+    <div class="gap"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     BOTTOM NAV (shared)
+═══════════════════════════════════════════ -->
+<nav class="bottom-nav" role="navigation" aria-label="Main navigation">
+  <button class="nav-item active" id="nav-home" onclick="goScreen('home')" aria-label="Home">
+    <i class="ti ti-home" aria-hidden="true"></i>
+    <div class="nav-dot"></div>
+    <div class="nav-label" id="nl-home">Home</div>
+  </button>
+  <button class="nav-item" id="nav-events" onclick="goScreen('events')" aria-label="Events">
+    <i class="ti ti-calendar-event" aria-hidden="true"></i>
+    <div class="nav-dot"></div>
+    <div class="nav-label" id="nl-events">Events</div>
+  </button>
+  <button class="nav-item" id="nav-family" onclick="goScreen('family')" aria-label="Family">
+    <i class="ti ti-users" aria-hidden="true"></i>
+    <div class="nav-dot"></div>
+    <div class="nav-label" id="nl-family">Family</div>
+  </button>
+  <button class="nav-item" id="nav-memories" onclick="goScreen('memories')" aria-label="Memories">
+    <i class="ti ti-photo" aria-hidden="true"></i>
+    <div class="nav-dot"></div>
+    <div class="nav-label" id="nl-memories">Memories</div>
+  </button>
+  <button class="nav-item" id="nav-more" onclick="goScreen('more')" aria-label="More">
+    <i class="ti ti-dots" aria-hidden="true"></i>
+    <div class="nav-dot"></div>
+    <div class="nav-label" id="nl-more">More</div>
+  </button>
+</nav>
+
+</div><!-- #app -->
+
+<script>
+// ── State ──
+let currentLang = 'en';
+let selectedName = '';
+let deferredInstallPrompt = null;
+
+// ── PWA install capture ──
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+});
+
+// ── Screen routing ──
+const screens = ['home','events','family','memories','more'];
+function goScreen(id) {
+  screens.forEach(s => {
+    document.getElementById('screen-' + s).classList.toggle('active', s === id);
+    document.getElementById('nav-' + s).classList.toggle('active', s === id);
+  });
+  window.scrollTo(0, 0);
+  if (id === 'events')   loadRSVPCount();
+  if (id === 'memories') loadMemories();
+}
+
+// ── Language ──
+const langs = ['en','hi','mr'];
+const langNames = {en:'English',hi:'हिन्दी',mr:'मराठी'};
+
+const T = {
+  en: {
+    'h-tag':'Wedding Celebration','h-and':'&','h-date':'December 2026','h-loc':'Nashik · Bharatpur',
+    'h-cd-label':'Until the celebrations begin','cd-text':'Counting','cd-ml':'months','cd-dl':'days',
+    'h-name-label':'Who are you?','h-name-hint':'Tap your name to personalize your view',
+    'h-role-label':'You are joining as','wc-guest':'Family Guest','wc-guest-sub':'See events & RSVP',
+    'wc-travel':'Travel & stay','wc-travel-sub':'Getting there',
+    'greeting-sub':'Roma and Prashant are so glad you\'re coming.',
+    'ev-title':'Ceremonies','c1-name':'Haldi & Mehendi','c1-loc':'Thakur Residence',
+    'c1-dress':'Yellow & turmeric tones','c1-dnote':'Avoid white and black',
+    'c1-desc':'Haldi is applied to the bride by family. Mehendi artists in the courtyard — you\'re welcome to get your hands done too.',
+    'c2-name':'Marathi Wedding','c2-loc':'Mangal Karyalay','c2-badge':'Ritual',
+    'c2-dress':'Saree, kurta or ethnic — red & green auspicious',
+    'c2-desc':'Muhurat begins early. Saptapadi, Mangalsutra, Antarpat. Breakfast and lunch at venue.',
+    'c2-note':'Please be seated before 7:15 AM. The Antarpat moment is silent — phones down.',
+    'c3-name':'Rajasthani Baraat',
+    'c3-dress':'Bandhani, leheriya, mirror-work. Men: sherwani or kurta.',
+    'c3-desc':'Groom arrives by horse. Dhol-baje procession. Pheras at Chaudhary Haveli. Dinner under open sky.',
+    'ev-dress':'Dress','ev-expect':'What to expect','ev-addr':'Full address','ev-note':'Gentle note',
+    'ev-rsvp-label':'Are you coming?','ev-rsvp-q':'Let Roma & Prashant know',
+    'rsvp-yes-lbl':'Yes, with joy','rsvp-no-lbl':"Can't make it",
+    'gift-body':'Your presence is the blessing. If you wish to give, the family prefers shagun envelopes at the venue. No registry, no online links — just love brought in person.',
+    'fam-title':'Family','fam-nashik-leg':'Nashik side','fam-bharatpur-leg':'Bharatpur side',
+    'fp-all':'Everyone','fp-nashik':'Nashik','fp-bharatpur':'Bharatpur','fp-elders':'Elders',
+    'fam-nashik-label':'Thakur family · Nashik','fam-bharatpur-label':'Chaudhary family · Bharatpur',
+    'fam-joining':'joining in marriage',
+    'mem-title':'Memories','up-title':'Share a moment',
+    'up-sub':'Your photos go into a shared family album.\nNo social media. Just this family.',
+    'up-btn':'Add a photo','mem-recent':'Recently added','mem-wish-head':'A wish from family',
+    'mem-wish-btn':'Leave a wish for Roma & Prashant',
+    'more-title':'More','pwa-title':'Add YUGAL to your home screen',
+    'pwa-sub':'Install the app for easy access during the wedding — works offline, no app store needed.',
+    'install-label':'Install app','more-travel':'Travel & stay',
+    'tr-nashik-head':'Getting to Nashik (Dec 18–19)','tr-bharatpur-head':'Getting to Bharatpur (Dec 22)',
+    'tr-airport':'Airport','tr-train':'Train','tr-stay':'Stay','tr-bus':'Group bus',
+    'more-prefs':'Preferences','pref-lang-title':'Language',
+    'pref-notif':'Ceremony reminders','pref-notif-sub':'Day-before gentle nudge',
+    'pref-photos':'Auto-save shared photos','pref-photos-sub':'Save family album to camera roll',
+    'more-about':'About','more-ceremonies':'View all ceremonies','more-ceremonies-sub':'Dates, dress, what to expect',
+    'more-family':'Family tree','more-family-sub':'Who\'s who on both sides',
+    'more-help':'Need help?','more-planner':'Full planner','more-planner-sub':'Coordinators & couple view',
+    'nl-home':'Home','nl-events':'Events','nl-family':'Family','nl-memories':'Memories','nl-more':'More',
+    'p-sanjeev':'Sanjeev Thakur','p-sanjeev-r':'Roma\'s father','p-meena-r':'Roma\'s mother',
+    'greet-pre':'Namaste','home-title':'You\'re invited'
+  },
+  hi: {
+    'h-tag':'विवाह उत्सव','h-and':'और','h-date':'दिसम्बर २०२६','h-loc':'नासिक · भरतपुर',
+    'h-cd-label':'जश्न शुरू होने तक','cd-text':'गिनती','cd-ml':'महीने','cd-dl':'दिन',
+    'h-name-label':'आप कौन हैं?','h-name-hint':'अपना नाम चुनें',
+    'h-role-label':'आप आ रहे हैं','wc-guest':'परिवार के मेहमान','wc-guest-sub':'कार्यक्रम देखें',
+    'wc-travel':'यात्रा और ठहराव','wc-travel-sub':'वहाँ कैसे पहुँचें',
+    'greeting-sub':'रोमा और प्रशांत बहुत खुश हैं कि आप आ रहे हैं।',
+    'ev-title':'रस्में','c1-name':'हल्दी और मेहंदी','c1-loc':'ठाकुर निवास, नासिक',
+    'c1-dress':'पीले और हल्दी रंग — सबसे चमकीला पहनें!','c1-dnote':'सफेद और काला न पहनें',
+    'c1-desc':'परिवार दुल्हन को हल्दी लगाता है। मेहंदी कलाकार आंगन में बैठेंगे।',
+    'c2-name':'मराठी विवाह','c2-loc':'नासिक मंगल कार्यालय','c2-badge':'रिवाज',
+    'c2-dress':'साड़ी, कुर्ता या एथनिक — लाल और हरा शुभ',
+    'c2-desc':'मुहूर्त सुबह जल्दी है। सप्तपदी, मंगलसूत्र, अंतरपट। नाश्ता और दोपहर का खाना।',
+    'c2-note':'7:15 से पहले बैठ जाएं। अंतरपट के समय चुप्पी — फोन रख दें।',
+    'c3-name':'राजस्थानी बारात',
+    'c3-dress':'बंधनी, लहरिया, शीशेदार काम। पुरुष: शेरवानी या कुर्ता।',
+    'c3-desc':'दूल्हा घोड़े पर आएगा। ढोल-बाजे के साथ बारात। हवेली में फेरे। रात का खाना खुले आसमान के नीचे।',
+    'ev-dress':'पोशाक','ev-expect':'क्या होगा','ev-addr':'पूरा पता','ev-note':'एक बात',
+    'ev-rsvp-label':'क्या आप आ रहे हैं?','ev-rsvp-q':'रोमा और प्रशांत को बताएं',
+    'rsvp-yes-lbl':'हाँ, ज़रूर','rsvp-no-lbl':'नहीं आ सकते',
+    'gift-body':'आपका आना ही आशीर्वाद है। देना चाहें तो शगुन लिफाफा लाएं। कोई रजिस्ट्री नहीं, बस प्यार।',
+    'fam-title':'परिवार','fam-nashik-leg':'नासिक परिवार','fam-bharatpur-leg':'भरतपुर परिवार',
+    'fp-all':'सब','fp-nashik':'नासिक','fp-bharatpur':'भरतपुर','fp-elders':'बड़े',
+    'fam-nashik-label':'ठाकुर परिवार · नासिक','fam-bharatpur-label':'चौधरी परिवार · भरतपुर',
+    'fam-joining':'विवाह में मिलन',
+    'mem-title':'यादें','up-title':'एक पल साझा करें',
+    'up-sub':'आपकी तस्वीरें पारिवारिक एलबम में जाएंगी।\nसोशल मीडिया नहीं, सिर्फ परिवार।',
+    'up-btn':'फ़ोटो जोड़ें','mem-recent':'हाल में जोड़े गए','mem-wish-head':'परिवार की ओर से एक दुआ',
+    'mem-wish-btn':'रोमा और प्रशांत के लिए दुआ लिखें',
+    'more-title':'और','pwa-title':'YUGAL को होम स्क्रीन पर जोड़ें',
+    'pwa-sub':'शादी के दौरान आसान पहुँच के लिए ऐप इंस्टॉल करें।',
+    'install-label':'ऐप इंस्टॉल करें','more-travel':'यात्रा और ठहराव',
+    'tr-nashik-head':'नासिक कैसे पहुँचें (18–19 दिस)','tr-bharatpur-head':'भरतपुर कैसे पहुँचें (22 दिस)',
+    'tr-airport':'हवाईअड्डा','tr-train':'ट्रेन','tr-stay':'ठहराव','tr-bus':'ग्रुप बस',
+    'more-prefs':'सेटिंग्स','pref-lang-title':'भाषा',
+    'pref-notif':'समारोह की याद','pref-notif-sub':'एक दिन पहले सूचना',
+    'pref-photos':'फ़ोटो ऑटो-सेव','pref-photos-sub':'पारिवारिक फ़ोटो कैमरा रोल में',
+    'more-about':'जानकारी','more-ceremonies':'सभी रस्में देखें','more-ceremonies-sub':'तारीख, पोशाक, जानकारी',
+    'more-family':'पारिवारिक वृक्ष','more-family-sub':'दोनों तरफ के लोग',
+    'more-help':'मदद चाहिए?','more-planner':'पूरा प्लानर','more-planner-sub':'समन्वयकों के लिए',
+    'nl-home':'होम','nl-events':'रस्में','nl-family':'परिवार','nl-memories':'यादें','nl-more':'और',
+    'p-sanjeev':'संजीव ठाकुर','p-sanjeev-r':'रोमा के पिता','p-meena-r':'रोमा की माँ',
+    'greet-pre':'नमस्ते','home-title':'आपका स्वागत है'
+  },
+  mr: {
+    'h-tag':'विवाह सोहळा','h-and':'आणि','h-date':'डिसेंबर २०२६','h-loc':'नाशिक · भरतपूर',
+    'h-cd-label':'सोहळ्यापर्यंत','cd-text':'मोजणी','cd-ml':'महिने','cd-dl':'दिवस',
+    'h-name-label':'तुम्ही कोण आहात?','h-name-hint':'तुमचं नाव निवडा',
+    'h-role-label':'तुम्ही येत आहात','wc-guest':'कुटुंब पाहुणे','wc-guest-sub':'कार्यक्रम पाहा',
+    'wc-travel':'प्रवास आणि राहणे','wc-travel-sub':'तिथे कसे पोहोचायचे',
+    'greeting-sub':'रोमा आणि प्रशांत खूप आनंदित आहेत की तुम्ही येत आहात।',
+    'ev-title':'विधी','c1-name':'हळद-मेहंदी','c1-loc':'ठाकूर निवास, नाशिक',
+    'c1-dress':'पिवळे आणि हळदीचे रंग — सर्वात उजळ कपडे घाला!','c1-dnote':'पांढरे आणि काळे टाळा',
+    'c1-desc':'कुटुंब वधूला हळद लावते. मेहंदी कलाकार अंगणात बसतील।',
+    'c2-name':'मराठी विवाह सोहळा','c2-loc':'नाशिक मंगल कार्यालय','c2-badge':'विधी',
+    'c2-dress':'साडी, कुर्ता किंवा एथनिक — लाल आणि हिरवा शुभ',
+    'c2-desc':'मुहूर्त लवकर आहे. सप्तपदी, मंगळसूत्र, अंतरपट. नाश्ता आणि जेवण मिळेल।',
+    'c2-note':'7:15 पूर्वी बसा. अंतरपटाच्या वेळी शांतता — फोन ठेवा।',
+    'c3-name':'राजस्थानी बारात',
+    'c3-dress':'बंधनी, लहेरिया, आरसेकाम. पुरुष: शेरवानी किंवा कुर्ता।',
+    'c3-desc':'वर घोड्यावर येणार. ढोल-ताशांसह बारात. हवेलीत फेरे. रात्रीचे जेवण आकाशाखाली।',
+    'ev-dress':'पोशाख','ev-expect':'काय होणार','ev-addr':'पूर्ण पत्ता','ev-note':'एक विनंती',
+    'ev-rsvp-label':'तुम्ही येणार का?','ev-rsvp-q':'रोमा आणि प्रशांतला सांगा',
+    'rsvp-yes-lbl':'हो, नक्की','rsvp-no-lbl':'येता येणार नाही',
+    'gift-body':'तुमचं येणं हाच आशीर्वाद आहे. द्यायचं असेल तर शगुन पाकीट आणा. कोणतीही यादी नाही — फक्त प्रेम।',
+    'fam-title':'कुटुंब','fam-nashik-leg':'नाशिक बाजू','fam-bharatpur-leg':'भरतपूर बाजू',
+    'fp-all':'सगळे','fp-nashik':'नाशिक','fp-bharatpur':'भरतपूर','fp-elders':'वडीलधारे',
+    'fam-nashik-label':'ठाकूर कुटुंब · नाशिक','fam-bharatpur-label':'चौधरी कुटुंब · भरतपूर',
+    'fam-joining':'विवाहात एकत्र येत आहेत',
+    'mem-title':'आठवणी','up-title':'एक क्षण शेअर करा',
+    'up-sub':'तुमचे फोटो कौटुंबिक अल्बममध्ये जातील.\nसोशल मीडिया नाही, फक्त कुटुंब.',
+    'up-btn':'फोटो जोडा','mem-recent':'नुकतेच जोडलेले','mem-wish-head':'कुटुंबाकडून एक इच्छा',
+    'mem-wish-btn':'रोमा आणि प्रशांतसाठी शुभेच्छा लिहा',
+    'more-title':'अधिक','pwa-title':'YUGAL होम स्क्रीनवर जोडा',
+    'pwa-sub':'लग्नादरम्यान सहज प्रवेशासाठी अॅप इंस्टॉल करा।',
+    'install-label':'अॅप इंस्टॉल करा','more-travel':'प्रवास आणि राहणे',
+    'tr-nashik-head':'नाशिकला कसे पोहोचायचे (18–19 डिस)','tr-bharatpur-head':'भरतपूरला कसे पोहोचायचे (22 डिस)',
+    'tr-airport':'विमानतळ','tr-train':'रेल्वे','tr-stay':'राहणे','tr-bus':'ग्रुप बस',
+    'more-prefs':'प्राधान्ये','pref-lang-title':'भाषा',
+    'pref-notif':'समारंभ स्मरण','pref-notif-sub':'एक दिवस आधी सूचना',
+    'pref-photos':'फोटो ऑटो-सेव्ह','pref-photos-sub':'कौटुंबिक फोटो कॅमेरा रोलमध्ये',
+    'more-about':'माहिती','more-ceremonies':'सर्व विधी पाहा','more-ceremonies-sub':'तारीख, पोशाख, माहिती',
+    'more-family':'कौटुंबिक वृक्ष','more-family-sub':'दोन्ही बाजूचे लोक',
+    'more-help':'मदत हवी?','more-planner':'पूर्ण प्लानर','more-planner-sub':'समन्वयकांसाठी',
+    'nl-home':'मुख्य','nl-events':'विधी','nl-family':'कुटुंब','nl-memories':'आठवणी','nl-more':'अधिक',
+    'p-sanjeev':'संजीव ठाकूर','p-sanjeev-r':'रोमाचे वडील','p-meena-r':'रोमाची आई',
+    'greet-pre':'नमस्कार','home-title':'आपले स्वागत आहे'
+  }
+};
+
+function applyLang(lang) {
+  currentLang = lang;
+  const s = T[lang];
+  Object.keys(s).forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (id === 'h-and') el.innerHTML = s[id];
+    else el.textContent = s[id];
+  });
+  document.getElementById('pref-lang-val').textContent = langNames[lang];
+  if (selectedName) {
+    document.getElementById('greeting-line').textContent = s['greet-pre'] + ', ' + selectedName + '!';
+    document.getElementById('greeting-sub').textContent = s['greeting-sub'];
+  }
+  document.querySelectorAll('.lang-pill').forEach(p => p.classList.remove('active'));
+  const idx = langs.indexOf(lang);
+  document.querySelectorAll('.lang-pill')[idx].classList.add('active');
+}
+
+function setLang(lang, el) { applyLang(lang); }
+
+function cycleLang() {
+  const idx = langs.indexOf(currentLang);
+  applyLang(langs[(idx + 1) % langs.length]);
+}
+
+// ── Countdown ──
+function calcCountdown() {
+  const diff = new Date('2026-12-18') - new Date();
+  if (diff <= 0) { document.getElementById('cd-m').textContent = '0'; document.getElementById('cd-d').textContent = '0'; return; }
+  const totalDays = Math.floor(diff / 864e5);
+  document.getElementById('cd-m').textContent = Math.floor(totalDays / 30);
+  document.getElementById('cd-d').textContent = totalDays % 30;
+}
+calcCountdown();
+
+// ── Name picker ──
+function pickName(el, name) {
+  document.querySelectorAll('.name-chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedName = name;
+  const banner = document.getElementById('greeting-banner');
+  banner.classList.add('visible');
+  const s = T[currentLang];
+  document.getElementById('greeting-line').textContent = s['greet-pre'] + ', ' + name + '!';
+  document.getElementById('greeting-sub').textContent = s['greeting-sub'];
+}
+
+// ── Ceremony detail toggle ──
+function toggleDetail(id) {
+  document.getElementById(id + '-detail').classList.toggle('open');
+}
+
+// ── Supabase client ──
+const _SB_URL = 'https://mrbzglbnjwoyxtsmmsud.supabase.co';
+const _SB_KEY = 'sb_publishable_SQdkFvRB6M2FTZ96mZOShQ_Lzd9G7y7';
+let _sb = null;
+function getSB() {
+  if (!_sb && typeof supabase !== 'undefined') {
+    _sb = supabase.createClient(_SB_URL, _SB_KEY);
+  }
+  return _sb;
+}
+
+// ── Load live RSVP count on events screen ──
+async function loadRSVPCount() {
+  const sb = getSB(); if (!sb) return;
+  try {
+    const { count } = await sb.from('rsvps')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'attending');
+    if (count !== null) {
+      document.getElementById('rsvp-count').innerHTML =
+        '<span class="attending-dot"></span>' + count + ' family members attending so far';
+    }
+  } catch(e) { /* silent — show cached count */ }
+}
+
+// ── RSVP ──
+async function rsvp(choice) {
+  ['yes','no'].forEach(c => document.getElementById('btn-' + c).classList.remove('chosen'));
+  document.getElementById('btn-' + choice).classList.add('chosen');
+  const countEl = document.getElementById('rsvp-count');
+
+  // Optimistic UI
+  if (choice === 'yes') {
+    countEl.innerHTML = '<span class="attending-dot"></span>Saving…';
+  } else {
+    countEl.innerHTML = '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--amber-dim);margin-right:4px;vertical-align:middle;"></span>You\'ll be missed — Roma sends her love.';
+  }
+
+  const sb = getSB();
+  if (sb && selectedName) {
+    try {
+      await sb.from('rsvps').upsert({
+        guest_name: selectedName,
+        event_slug: 'all',
+        status: choice === 'yes' ? 'attending' : 'declined'
+      }, { onConflict: 'guest_name,event_slug' });
+      await loadRSVPCount();
+    } catch(e) {
+      console.warn('RSVP save failed, local only', e);
+      if (choice === 'yes') countEl.innerHTML = '<span class="attending-dot"></span>Saved ✓';
+    }
+  } else if (!selectedName) {
+    countEl.innerHTML = '<span style="color:var(--amber-dim);">Pick your name above first</span>';
+    document.getElementById('btn-' + choice).classList.remove('chosen');
+  }
+}
+
+// ── Family filter ──
+function filterFamily(filter, el) {
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.person-card').forEach(c => {
+    const side = c.dataset.side;
+    const isElder = c.dataset.elder === 'true';
+    let show = true;
+    if (filter === 'nashik' && side !== 'nashik') show = false;
+    if (filter === 'bharatpur' && side !== 'bharatpur') show = false;
+    if (filter === 'elders' && !isElder) show = false;
+    c.style.display = show ? '' : 'none';
+  });
+}
+
+// ── Person detail ──
+function showPerson(name, relation, city, note, side) {
+  document.getElementById('pd-name').textContent = name;
+  document.getElementById('pd-relation').textContent = relation;
+  document.getElementById('pd-city').textContent = city;
+  document.getElementById('pd-note').textContent = note;
+  const panel = document.getElementById('person-detail');
+  panel.classList.add('open');
+  panel.style.borderLeftColor = side === 'nashik' ? 'var(--nashik)' : 'var(--bharatpur)';
+  panel.style.borderLeftWidth = '2.5px';
+  panel.style.borderLeftStyle = 'solid';
+}
+function closePerson() { document.getElementById('person-detail').classList.remove('open'); }
+
+// ── Photo filter ──
+function filterPhotos(tag, el) {
+  document.querySelectorAll('.filter-row .filter-pill').forEach(p => {
+    if (p.closest('#screen-memories')) p.classList.remove('active');
+  });
+  el.classList.add('active');
+  document.querySelectorAll('.photo-card').forEach(c => {
+    c.style.display = (tag === 'all' || c.dataset.tag === tag) ? '' : 'none';
+  });
+}
+
+// ── Photo likes ──
+function toggleLike(btnId, countId) {
+  const btn = document.getElementById(btnId);
+  const countEl = document.getElementById(countId);
+  const liked = btn.classList.toggle('liked');
+  let n = parseInt(countEl.textContent);
+  countEl.textContent = liked ? n + 1 : n - 1;
+}
+
+// ── Upload ──
+async function handleUpload(event) {
+  const file = event && event.target && event.target.files && event.target.files[0];
+  if (!file) return;
+
+  const zone = document.getElementById('upload-zone');
+  const titleEl = document.getElementById('up-title');
+  const btnEl = document.getElementById('up-btn');
+
+  titleEl.textContent = 'Uploading…';
+  btnEl.textContent = 'Please wait';
+  zone.style.borderColor = 'var(--amber)';
+
+  const sb = getSB();
+  if (!sb) {
+    titleEl.textContent = 'No connection — try again';
+    btnEl.textContent = 'Add a photo';
+    zone.style.borderColor = '';
+    return;
+  }
+
+  try {
+    const ext = file.name.split('.').pop().toLowerCase();
+    const path = Date.now() + '-' + (selectedName || 'guest').replace(/\s+/g, '-') + '.' + ext;
+
+    // Upload to Storage
+    const { error: upErr } = await sb.storage
+      .from('yugal-memories')
+      .upload(path, file, { contentType: file.type, upsert: false });
+    if (upErr) throw upErr;
+
+    // Save metadata row
+    await sb.from('memories').insert({
+      guest_name: selectedName || 'Guest',
+      caption: '',
+      event_tag: null,
+      storage_path: path
+    });
+
+    // Show the uploaded photo in the grid
+    const publicUrl = sb.storage.from('yugal-memories').getPublicUrl(path).data.publicUrl;
+    addPhotoToGrid(publicUrl, selectedName || 'Guest', path);
+
+    titleEl.textContent = 'Photo added ✓';
+    btnEl.textContent = 'Add another';
+    setTimeout(() => {
+      titleEl.textContent = 'Share a moment';
+      zone.style.borderColor = '';
+    }, 2000);
+  } catch(e) {
+    console.error('Upload failed', e);
+    titleEl.textContent = 'Upload failed — try again';
+    btnEl.textContent = 'Add a photo';
+    zone.style.borderColor = 'var(--red)';
+    setTimeout(() => zone.style.borderColor = '', 2000);
+  }
+  // Reset file input so same file can be re-selected
+  event.target.value = '';
+}
+
+function addPhotoToGrid(url, name, path) {
+  const grid = document.querySelector('.photo-grid');
+  const card = document.createElement('div');
+  card.className = 'photo-card';
+  card.dataset.tag = 'all';
+  card.innerHTML = `
+    <img src="${url}" style="width:100%;height:110px;object-fit:cover;border-radius:8px 8px 0 0;" alt="memory">
+    <div class="photo-info">
+      <div class="photo-caption">A moment shared</div>
+      <div class="photo-meta">${name} · just now</div>
+    </div>`;
+  grid.prepend(card);
+}
+
+// Load memories from Supabase on memories screen open
+async function loadMemories() {
+  const sb = getSB(); if (!sb) return;
+  try {
+    const { data } = await sb.from('memories')
+      .select('*').order('created_at', { ascending: false }).limit(20);
+    if (!data || data.length === 0) return;
+    const grid = document.querySelector('.photo-grid');
+    // Clear placeholder cards
+    grid.innerHTML = '';
+    data.forEach(row => {
+      const url = sb.storage.from('yugal-memories').getPublicUrl(row.storage_path).data.publicUrl;
+      const card = document.createElement('div');
+      card.className = 'photo-card';
+      card.dataset.tag = row.event_tag || 'all';
+      const when = new Date(row.created_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
+      card.innerHTML = `
+        <img src="${url}" style="width:100%;height:110px;object-fit:cover;border-radius:8px 8px 0 0;" alt="memory">
+        <div class="photo-info">
+          <div class="photo-caption">${row.caption || 'A moment shared'}</div>
+          <div class="photo-meta">${row.guest_name} · ${when}</div>
+        </div>`;
+      grid.appendChild(card);
+    });
+  } catch(e) { /* silent — keep placeholder cards */ }
+}
+
+// ── Toggle switch ──
+function toggleEl(id) {
+  document.getElementById(id).classList.toggle('off');
+}
+
+// ── PWA install ──
+function installPWA() {
+  if (deferredInstallPrompt) {
+    deferredInstallPrompt.prompt();
+    deferredInstallPrompt.userChoice.then(() => { deferredInstallPrompt = null; });
+  }
+  const btn = document.getElementById('install-btn');
+  btn.classList.add('done');
+  document.getElementById('install-label').textContent = 'Added to home screen';
+}
+
+// ── Service worker ──
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
