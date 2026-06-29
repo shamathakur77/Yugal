@@ -61,7 +61,7 @@ const PEOPLE = {
 const OWNER_COLOR = { ROMAFAM:"var(--p-roma)", PRASHANTFAM:"var(--p-pfam)", ALL:"var(--p-all)" };
 
 /* ---- Change the wedding date here anytime: new Date(YYYY, MM-1, DD) ---- */
-const WEDDING_DATE = new Date(2026, 10, 25); // 25 Nov 2026 (month 10 = November)
+const WEDDING_DATE = new Date(2026, 11, 25); // 25 Dec 2026 — Nashik Reception (month 11 = December)
 /* ----------------------------------------------------------------------- */
 
 
