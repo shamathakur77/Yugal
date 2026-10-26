@@ -75,7 +75,7 @@ function monthProgress(mi){ const items=MONTHS[lang][mi].items; let done=0;
   return {done, total:items.length, pct:Math.round(done/items.length*100)}; }
 
 function renderProgress(){
-  const M=MONTHS[lang]; const short=['Jun','Aug','Sep','Oct','Nov','Dec'];
+  const M=MONTHS[lang]; const short=['Now','Pune','13 Dec','24 Dec'];
   let h=`<div class="pstrip">`;
   M.forEach((mo,mi)=>{ const p=monthProgress(mi); const r=15.5, circ=2*Math.PI*r, off=circ*(1-p.pct/100);
     h+=`<div class="pring" onclick="jumpMonth(${mi})">

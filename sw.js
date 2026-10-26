@@ -12,7 +12,7 @@
      them). Bump CACHE_VERSION whenever you change cached files.
    ============================================================= */
 
-const CACHE_VERSION = 'yugal-wedding-v3';
+const CACHE_VERSION = 'yugal-wedding-v4';
 const APP_SHELL = [
   './',
   './index.html',

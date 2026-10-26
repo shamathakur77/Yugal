@@ -43,7 +43,7 @@ header{ text-align:center; padding:42px 16px 14px; position:relative;}
 .diya-glow{ position:absolute; top:30px; left:50%; transform:translateX(-50%); width:230px; height:120px; border-radius:50%;
   background:radial-gradient(circle,rgba(224,160,48,.4),transparent 70%); filter:blur(30px); z-index:0; animation:pulse 3.6s ease-in-out infinite;}
 @keyframes pulse{ 0%,100%{opacity:.5;transform:translateX(-50%) scale(1);} 50%{opacity:.85;transform:translateX(-50%) scale(1.08);} }
-header > *:not(.toran):not(.diya-glow){ position:relative; z-index:2;}
+header > *:not(.toran):not(.diya-glow):not(.aurora-orb){ position:relative; z-index:2;}
 header::after{ content:"✦  ✦  ✦"; position:absolute; bottom:5px; left:0; right:0; font-size:7px; color:var(--gold); letter-spacing:8px; opacity:.5; z-index:2;}
 .kicker{ font-size:9px; letter-spacing:3px; color:var(--gold-bright);}
 h1{ font-family:'Fraunces',serif; font-weight:700; font-size:30px; margin:3px 0 1px; line-height:1.1; color:#f4e8cf; text-shadow:0 2px 12px rgba(224,160,48,.2);}

@@ -51,8 +51,7 @@ body::before {
 @media (prefers-reduced-motion:reduce) { body::before { animation:none; } }
 
 /* Z-index stack */
-.petal-layer,.frameL,.frameR,main,header,nav,#entranceOverlay,
-.more-drawer,.more-backdrop,.modal,.lightbox,#musicToggle { position:relative; z-index:2; }
+main,header { position:relative; z-index:2; }
 body::before { z-index:0; }
 
 /* ── HEADER — compact, no gap ───────────────────────────────── */
