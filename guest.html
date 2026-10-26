@@ -452,10 +452,10 @@ html,body{height:100%;background:var(--bg);color:var(--text);
     <div class="rsvp-card">
       <div class="rsvp-title"><i class="ti ti-check" aria-hidden="true"></i><span id="ev-rsvp-q">Let Roma &amp; Prashant know</span></div>
       <div class="rsvp-buttons">
-        <button class="rsvp-btn" id="btn-yes" onclick="rsvp('yes')">
+        <a class="rsvp-btn" href="./guestbook.html" style="text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;">
           <i class="ti ti-heart" aria-hidden="true"></i>
           <span id="rsvp-yes-lbl">Yes, with joy</span>
-        </button>
+        </a>
         <button class="rsvp-btn" id="btn-no" onclick="rsvp('no')">
           <i class="ti ti-heart-broken" aria-hidden="true"></i>
           <span id="rsvp-no-lbl">Can't make it</span>
@@ -991,11 +991,9 @@ function toggleDetail(id) {
 
 // ── RSVP ──
 function rsvp(choice) {
-  ['yes','no'].forEach(c => document.getElementById('btn-' + c).classList.remove('chosen'));
-  document.getElementById('btn-' + choice).classList.add('chosen');
+  document.getElementById('btn-no').classList.add('chosen');
   const countEl = document.getElementById('rsvp-count');
-  if (choice === 'yes') countEl.innerHTML = '<span class="attending-dot"></span>48 family members attending so far';
-  else countEl.innerHTML = '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--amber-dim);margin-right:4px;vertical-align:middle;"></span>You\'ll be missed — Roma sends her love.';
+  countEl.innerHTML = '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--amber-dim);margin-right:4px;vertical-align:middle;"></span>You\'ll be missed — Roma sends her love.';
 }
 
 // ── Family filter ──

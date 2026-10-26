@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1a0f0a">
+<title>Guest Book · Roma & Prashant</title>
+<meta name="description" content="Tell Roma & Prashant you're coming. 30 seconds, one question at a time.">
+<meta property="og:title" content="Roma & Prashant · Guest Book">
+<meta property="og:description" content="Tell us you're coming. 30 seconds.">
+<link rel="icon" href="./icons/icon-512.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+:root{
+  --bg:#1a0f0a;--surf:#241610;--surf2:#2e1c12;
+  --amber:#d4893a;--amber-dim:#9a5e22;--glow:#f0c97a;
+  --text:#f5e8d4;--dim:#a08060;
+  --border:rgba(212,137,58,.18);--border2:rgba(212,137,58,.42);
+  --nashik:#c4785a;--bharatpur:#6a94c4;--green:#5db87a;--rose:#e8a5b4;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Noto Sans Devanagari',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;background:
+  radial-gradient(60% 40% at 50% -10%,rgba(240,201,122,.16),transparent 60%),
+  radial-gradient(40% 30% at 90% 100%,rgba(196,120,90,.12),transparent 60%);pointer-events:none}
+#app{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;position:relative;padding:0 20px env(safe-area-inset-bottom)}
+.serif{font-family:'Cormorant Garamond',Georgia,serif}
+
+/* top */
+.top{display:flex;justify-content:space-between;align-items:center;padding:18px 0 6px}
+.brand{font-size:11px;letter-spacing:.22em;color:var(--amber);text-transform:uppercase}
+.lang{font-size:11px;color:var(--dim);background:var(--surf);border:1px solid var(--border);border-radius:20px;padding:6px 12px;font-family:inherit;cursor:pointer}
+.lang:active{transform:scale(.96)}
+
+/* progress petals */
+.petals{display:flex;gap:6px;justify-content:center;margin:10px 0 4px}
+.petal{width:7px;height:7px;border-radius:50%;background:var(--surf2);border:1px solid var(--border);transition:all .35s}
+.petal.on{background:var(--amber);border-color:var(--glow);box-shadow:0 0 12px rgba(240,201,122,.55)}
+.petal.done{background:var(--amber-dim);border-color:var(--amber-dim)}
+
+/* buddy */
+.buddy{display:flex;flex-direction:column;align-items:center;margin:8px 0 2px;min-height:118px}
+.buddy svg{width:92px;height:92px;filter:drop-shadow(0 6px 18px rgba(240,201,122,.25));animation:float 3.6s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.buddy.happy svg{animation:bounce .7s ease}
+@keyframes bounce{0%{transform:scale(1)}35%{transform:scale(1.14) rotate(-4deg)}70%{transform:scale(.96) rotate(3deg)}100%{transform:scale(1)}}
+.say{font-size:13px;color:var(--dim);margin-top:6px;text-align:center;min-height:18px;transition:opacity .3s}
+
+/* steps */
+.stage{flex:1;position:relative}
+.step{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;transform:translateX(24px);pointer-events:none;transition:opacity .35s,transform .35s}
+.step.on{opacity:1;transform:none;pointer-events:auto;position:relative}
+.q{font-family:'Cormorant Garamond',Georgia,serif;font-size:30px;line-height:1.15;font-weight:500;margin:6px 0 4px;color:var(--text)}
+.sub{font-size:13px;color:var(--dim);margin-bottom:16px}
+input.big{width:100%;background:var(--surf);border:1px solid var(--border2);color:var(--text);border-radius:16px;padding:16px 18px;font-size:19px;font-family:inherit;outline:none;transition:border .2s,box-shadow .2s}
+input.big:focus{border-color:var(--glow);box-shadow:0 0 0 4px rgba(240,201,122,.12)}
+input.big::placeholder{color:var(--dim);opacity:.7}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opt{display:flex;align-items:center;gap:14px;background:var(--surf);border:1px solid var(--border);border-radius:16px;padding:16px 18px;font-size:16px;color:var(--text);font-family:inherit;text-align:left;cursor:pointer;transition:all .18s;position:relative;overflow:hidden}
+.opt .ic{font-size:22px;width:30px;text-align:center}
+.opt small{display:block;font-size:12px;color:var(--dim);margin-top:2px}
+.opt:active{transform:scale(.985)}
+.opt.on{border-color:var(--glow);background:linear-gradient(135deg,rgba(212,137,58,.22),rgba(240,201,122,.08));box-shadow:0 0 0 1px rgba(240,201,122,.35),0 8px 24px rgba(212,137,58,.18)}
+.opt.on::after{content:"✓";position:absolute;right:16px;color:var(--glow);font-weight:600}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stepper{display:flex;align-items:center;justify-content:center;gap:22px;margin:10px 0 6px}
+.stepper button{width:54px;height:54px;border-radius:50%;background:var(--surf);border:1px solid var(--border2);color:var(--glow);font-size:26px;font-family:inherit;cursor:pointer}
+.stepper button:active{transform:scale(.93)}
+.stepper .n{font-family:'Cormorant Garamond',serif;font-size:56px;line-height:1;min-width:60px;text-align:center;color:var(--glow)}
+.nav{display:flex;gap:10px;margin:18px 0 8px}
+.btn{flex:1;background:linear-gradient(135deg,var(--amber),#e8a85a);color:#1a0f0a;border:none;border-radius:16px;padding:16px;font-size:16px;font-weight:600;font-family:inherit;cursor:pointer;box-shadow:0 8px 24px rgba(212,137,58,.32);transition:transform .12s,opacity .2s}
+.btn:active{transform:scale(.98)}
+.btn[disabled]{opacity:.38;box-shadow:none}
+.btn.ghost{flex:0 0 auto;background:transparent;color:var(--dim);box-shadow:none;border:1px solid var(--border);padding:16px 18px;font-weight:500}
+.hint{font-size:12px;color:var(--dim);text-align:center;margin-top:6px}
+.count{font-size:12px;color:var(--amber);text-align:center;letter-spacing:.06em;margin-bottom:6px;min-height:16px}
+
+/* done */
+.done{text-align:center;padding-top:10px}
+.done .big{font-family:'Cormorant Garamond',serif;font-size:40px;line-height:1.05;margin:6px 0}
+.done .num{display:inline-block;font-family:'Cormorant Garamond',serif;font-size:14px;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);border:1px solid var(--border2);border-radius:30px;padding:6px 14px;margin:12px 0}
+.card{background:var(--surf);border:1px solid var(--border);border-radius:18px;padding:16px;text-align:left;margin-top:14px}
+.card .r{display:flex;justify-content:space-between;font-size:14px;padding:6px 0;border-bottom:1px dashed var(--border)}
+.card .r:last-child{border:0}
+.card .r span:first-child{color:var(--dim)}
+.links{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.links a{display:block;text-decoration:none;color:var(--text);background:var(--surf);border:1px solid var(--border);border-radius:14px;padding:13px;font-size:14px}
+.links a b{color:var(--glow)}
+
+/* confetti */
+canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:9}
+
+/* admin */
+.adm{padding:10px 0 40px}
+.adm h2{font-family:'Cormorant Garamond',serif;font-size:28px;margin-bottom:10px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0}
+.stat{background:var(--surf);border:1px solid var(--border);border-radius:14px;padding:10px 6px;text-align:center}
+.stat b{display:block;font-family:'Cormorant Garamond',serif;font-size:28px;color:var(--glow);line-height:1}
+.stat span{font-size:10px;color:var(--dim);letter-spacing:.06em;text-transform:uppercase}
+.gl{display:flex;flex-direction:column;gap:8px}
+.g{background:var(--surf);border:1px solid var(--border);border-radius:14px;padding:12px 14px;display:flex;justify-content:space-between;gap:10px;align-items:center}
+.g b{font-weight:600;font-size:15px}
+.g small{display:block;color:var(--dim);font-size:12px;margin-top:2px}
+.tag{font-size:10px;padding:3px 8px;border-radius:20px;border:1px solid var(--border2);color:var(--amber);white-space:nowrap}
+.tag.n{color:var(--nashik);border-color:var(--nashik)}
+.tag.b{color:var(--bharatpur);border-color:var(--bharatpur)}
+.tag.no{color:var(--dim)}
+.toolbar{display:flex;gap:8px;margin:10px 0}
+.toolbar .btn{padding:12px;font-size:14px}
+.toolbar select,.toolbar input{flex:1;background:var(--surf);border:1px solid var(--border);color:var(--text);border-radius:12px;padding:10px;font-family:inherit;font-size:14px}
+.foot{font-size:11px;color:var(--dim);text-align:center;padding:26px 0 18px;line-height:1.7}
+.foot .om{font-size:18px;color:var(--amber)}
+</style>
+</head>
+<body>
+<canvas id="fx"></canvas>
+<div id="app">
+  <div class="top">
+    <div class="brand">Roma &amp; Prashant · 2026</div>
+    <button class="lang" onclick="cycleLang()" id="langBtn">EN · हि · म</button>
+  </div>
+
+  <!-- GUEST FLOW -->
+  <div id="flow">
+    <div class="petals" id="petals"></div>
+    <div class="buddy" id="buddy">
+      <svg viewBox="0 0 100 100" aria-hidden="true">
+        <defs><radialGradient id="mg" cx="40%" cy="35%"><stop offset="0" stop-color="#ffd98a"/><stop offset=".6" stop-color="#e8a040"/><stop offset="1" stop-color="#c46a1e"/></radialGradient></defs>
+        <g id="petalsvg">
+          <ellipse cx="50" cy="18" rx="9" ry="16" fill="#f0a338"/><ellipse cx="50" cy="82" rx="9" ry="16" fill="#f0a338"/>
+          <ellipse cx="18" cy="50" rx="16" ry="9" fill="#f0a338"/><ellipse cx="82" cy="50" rx="16" ry="9" fill="#f0a338"/>
+          <ellipse cx="27" cy="27" rx="13" ry="9" fill="#e89a2c" transform="rotate(-45 27 27)"/><ellipse cx="73" cy="27" rx="13" ry="9" fill="#e89a2c" transform="rotate(45 73 27)"/>
+          <ellipse cx="27" cy="73" rx="13" ry="9" fill="#e89a2c" transform="rotate(45 27 73)"/><ellipse cx="73" cy="73" rx="13" ry="9" fill="#e89a2c" transform="rotate(-45 73 73)"/>
+        </g>
+        <circle cx="50" cy="50" r="27" fill="url(#mg)"/>
+        <path d="M44 8 q6 -10 12 0 q-4 6 -12 0z" fill="#5fae5a"/><path d="M50 10 q10 -6 14 2 q-8 4 -14 -2z" fill="#4e9a4b"/>
+        <g id="eyes"><ellipse cx="41" cy="48" rx="3.2" ry="4.2" fill="#2b1608"/><ellipse cx="59" cy="48" rx="3.2" ry="4.2" fill="#2b1608"/>
+        <circle cx="42.2" cy="46.5" r="1.1" fill="#fff"/><circle cx="60.2" cy="46.5" r="1.1" fill="#fff"/></g>
+        <path id="mouth" d="M42 58 q8 7 16 0" stroke="#2b1608" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+        <circle cx="34" cy="56" r="3.5" fill="#f4a6a6" opacity=".7"/><circle cx="66" cy="56" r="3.5" fill="#f4a6a6" opacity=".7"/>
+      </svg>
+      <div class="say" id="say"></div>
+    </div>
+
+    <div class="stage" id="stage"></div>
+  </div>
+
+  <!-- ADMIN -->
+  <div id="admin" class="adm" style="display:none"></div>
+
+  <div class="foot"><span class="om">ॐ</span><br>तत् त्वम् असि · you are that<br>Made with love by Shama for Roma &amp; Prashant</div>
+</div>
+
+<script>
+/* ───────── config ───────── */
+const SUPABASE_URL="https://mrbzglbnjwoyxtsmmsud.supabase.co";
+const SUPABASE_ANON_KEY="sb_publishable_SQdkFvRB6M2FTZ96mZOShQ_Lzd9G7y7";
+const WEDDING_CODE="roma-prashant-nov";
+let sb=null; try{ sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);}catch(e){ console.warn('supabase unavailable',e); }
+
+/* ───────── copy ───────── */
+const L={
+en:{hi:["Hi! I'm Yugu 🌼","Nice to meet you","Lovely name","Both? Even better","Noted","Almost there","Last one","You're on the list 🎉"],
+ q1:"What's your name?",s1:"As the family knows you.",p1:"Your name",
+ q2:"Who are you coming with?",s2:"Count everyone in your group, you included.",
+ q3:"Which side of the family?",s3:"Just so we seat you with your people.",roma:"Roma's side",romaS:"Thakur · Nashik, Pune, Dombivli",pra:"Prashant's side",praS:"Chaudhary · Bharatpur, Jaipur",fr:"Friend of the couple",
+ q4:"Which celebration?",s4:"Tap all that apply.",bh:"Bharatpur reception",bhS:"Sat 13 Dec",na:"Nashik reception",naS:"Thu 24 Dec · Racca's Green Square, 7 PM",
+ q5:"Coming from?",s5:"Your city.",p5:"City",
+ q6:"Need a room in Nashik?",s6:"A room block is being arranged from 24 Dec.",yes:"Yes, please",yesS:"We'll book for you",no:"No, sorted",noS:"Staying with family or own booking",
+ q6b:"How many nights?",
+ q7:"Food?",veg:"Vegetarian",nonveg:"Non-vegetarian",jain:"Jain",
+ q8:"A number we can reach you on",s8:"Only Roma, Shama and Mom see this. Never shared.",p8:"WhatsApp number",
+ next:"Next",back:"Back",done:"Add me to the list",saving:"Saving…",
+ d1:"You're on the list",d2:"Guest no.",d3:"Roma and Prashant can't wait to see you.",share:"Send this to family who haven't filled it yet",cal:"Add the dates to your calendar",err:"Could not save. Check your internet and tap again.",
+ counter:"family members have said yes so far",
+ g:"guests",pax:"people",rooms:"rooms",vegs:"veg"},
+hi:{hi:["नमस्ते! मैं युगु 🌼","आपसे मिलकर खुशी हुई","सुंदर नाम","दोनों? और भी अच्छा","नोट कर लिया","बस थोड़ा और","आख़िरी सवाल","आप लिस्ट में हैं 🎉"],
+ q1:"आपका नाम?",s1:"जैसे परिवार आपको जानता है।",p1:"आपका नाम",
+ q2:"आप कितने लोग आ रहे हैं?",s2:"अपने ग्रुप में सबको गिनें, आप भी।",
+ q3:"परिवार की कौन सी तरफ़?",s3:"ताकि आपको अपनों के साथ बिठाएँ।",roma:"रोमा की तरफ़",romaS:"ठाकुर · नासिक, पुणे, डोंबिवली",pra:"प्रशांत की तरफ़",praS:"चौधरी · भरतपुर, जयपुर",fr:"दोनों के दोस्त",
+ q4:"कौन सा कार्यक्रम?",s4:"जो भी लागू हो, सब चुनें।",bh:"भरतपुर रिसेप्शन",bhS:"शनि 13 दिस",na:"नासिक रिसेप्शन",naS:"गुरु 24 दिस · रक्का'ज़ ग्रीन स्क्वेयर, 7 बजे",
+ q5:"कहाँ से आ रहे हैं?",s5:"आपका शहर।",p5:"शहर",
+ q6:"नासिक में कमरा चाहिए?",s6:"24 दिस से कमरे बुक किए जा रहे हैं।",yes:"हाँ, चाहिए",yesS:"हम बुक करेंगे",no:"नहीं, इंतज़ाम है",noS:"परिवार के साथ या अपनी बुकिंग",
+ q6b:"कितनी रातें?",
+ q7:"खाना?",veg:"शाकाहारी",nonveg:"मांसाहारी",jain:"जैन",
+ q8:"संपर्क नंबर",s8:"सिर्फ़ रोमा, शमा और माँ देखेंगी। किसी से साझा नहीं।",p8:"व्हाट्सऐप नंबर",
+ next:"आगे",back:"पीछे",done:"मुझे लिस्ट में जोड़ो",saving:"सेव हो रहा है…",
+ d1:"आप लिस्ट में हैं",d2:"अतिथि नं.",d3:"रोमा और प्रशांत आपका इंतज़ार कर रहे हैं।",share:"जिन्होंने अभी नहीं भरा, उन्हें भेजें",cal:"तारीख़ें कैलेंडर में जोड़ें",err:"सेव नहीं हुआ। इंटरनेट देखें और फिर दबाएँ।",
+ counter:"लोगों ने अब तक हाँ कहा",
+ g:"मेहमान",pax:"लोग",rooms:"कमरे",vegs:"शाकाहारी"},
+mr:{hi:["नमस्कार! मी युगु 🌼","भेटून आनंद झाला","छान नाव","दोन्ही? अजून छान","नोंद केली","जवळजवळ झालं","शेवटचा प्रश्न","तुम्ही यादीत आहात 🎉"],
+ q1:"तुमचं नाव?",s1:"कुटुंब ओळखतं तसं.",p1:"तुमचं नाव",
+ q2:"तुम्ही किती जण येताय?",s2:"तुमच्या ग्रुपमधले सगळे, तुम्ही धरून.",
+ q3:"कुटुंबाची कोणती बाजू?",s3:"म्हणजे तुम्हाला तुमच्या लोकांसोबत बसवता येईल.",roma:"रोमाची बाजू",romaS:"ठाकूर · नाशिक, पुणे, डोंबिवली",pra:"प्रशांतची बाजू",praS:"चौधरी · भरतपूर, जयपूर",fr:"दोघांचे मित्र",
+ q4:"कोणता कार्यक्रम?",s4:"जे लागू असेल ते सगळं निवडा.",bh:"भरतपूर स्वागत समारंभ",bhS:"शनि 13 डिस",na:"नाशिक स्वागत समारंभ",naS:"गुरु 24 डिस · रक्का'ज ग्रीन स्क्वेअर, 7 वा",
+ q5:"कुठून येताय?",s5:"तुमचं शहर.",p5:"शहर",
+ q6:"नाशिकमध्ये रूम हवी?",s6:"24 डिस पासून रूम बुक होत आहेत.",yes:"हो, हवी",yesS:"आम्ही बुक करू",no:"नाही, सोय आहे",noS:"कुटुंबाकडे किंवा स्वतःची बुकिंग",
+ q6b:"किती रात्री?",
+ q7:"जेवण?",veg:"शाकाहारी",nonveg:"मांसाहारी",jain:"जैन",
+ q8:"संपर्क नंबर",s8:"फक्त रोमा, शमा आणि आई बघतील. कुणालाही दिला जाणार नाही.",p8:"व्हॉट्सॲप नंबर",
+ next:"पुढे",back:"मागे",done:"मला यादीत टाका",saving:"सेव्ह होतंय…",
+ d1:"तुम्ही यादीत आहात",d2:"पाहुणे क्र.",d3:"रोमा आणि प्रशांत तुमची वाट बघत आहेत.",share:"ज्यांनी अजून भरलं नाही त्यांना पाठवा",cal:"तारखा कॅलेंडरमध्ये टाका",err:"सेव्ह झालं नाही. इंटरनेट बघा आणि पुन्हा दाबा.",
+ counter:"जणांनी आतापर्यंत हो म्हटलं",
+ g:"पाहुणे",pax:"लोक",rooms:"रूम",vegs:"शाकाहारी"}
+};
+let lang=localStorage.getItem('yg_lang')||'en'; const t=k=>L[lang][k];
+function cycleLang(){lang={en:'hi',hi:'mr',mr:'en'}[lang];localStorage.setItem('yg_lang',lang);render();}
+
+/* ───────── state ───────── */
+const G={name:'',pax:1,side:'',events:[],city:'',room:'',nights:2,food:'',phone:''};
+let step=0; const STEPS=8; let total=null;
+const sayIt=(i,happy)=>{const s=document.getElementById('say');s.style.opacity=0;setTimeout(()=>{s.textContent=t('hi')[i]||'';s.style.opacity=1},160);const b=document.getElementById('buddy');if(happy){b.classList.remove('happy');void b.offsetWidth;b.classList.add('happy');}};
+
+function petals(){document.getElementById('petals').innerHTML=Array.from({length:STEPS},(_,i)=>`<div class="petal ${i<step?'done':i===step?'on':''}"></div>`).join('');}
+const opt=(k,on,ic,label,sub,extra='')=>`<button class="opt ${on?'on':''}" ${extra} onclick="pick('${k}')"><span class="ic">${ic}</span><span>${label}${sub?`<small>${sub}</small>`:''}</span></button>`;
+
+function view(){
+  switch(step){
+  case 0:return `<div class="q">${t('q1')}</div><div class="sub">${t('s1')}</div><input class="big" id="in" placeholder="${t('p1')}" value="${esc(G.name)}" autocomplete="name" oninput="G.name=this.value;chk()">`;
+  case 1:return `<div class="q">${t('q2')}</div><div class="sub">${t('s2')}</div><div class="stepper"><button onclick="G.pax=Math.max(1,G.pax-1);render()">−</button><div class="n">${G.pax}</div><button onclick="G.pax=Math.min(20,G.pax+1);render()">+</button></div>`;
+  case 2:return `<div class="q">${t('q3')}</div><div class="sub">${t('s3')}</div><div class="opts">${opt('side:roma',G.side==='roma','🌿',t('roma'),t('romaS'))}${opt('side:prashant',G.side==='prashant','🌸',t('pra'),t('praS'))}${opt('side:friend',G.side==='friend','✨',t('fr'))}</div>`;
+  case 3:return `<div class="q">${t('q4')}</div><div class="sub">${t('s4')}</div><div class="opts">${opt('ev:bharatpur',G.events.includes('bharatpur'),'🏰',t('bh'),t('bhS'))}${opt('ev:nashik',G.events.includes('nashik'),'🎉',t('na'),t('naS'))}</div>`;
+  case 4:return `<div class="q">${t('q5')}</div><div class="sub">${t('s5')}</div><input class="big" id="in" placeholder="${t('p5')}" value="${esc(G.city)}" autocomplete="address-level2" oninput="G.city=this.value;chk()">`;
+  case 5:return `<div class="q">${t('q6')}</div><div class="sub">${t('s6')}</div><div class="opts">${opt('room:yes',G.room==='yes','🛏️',t('yes'),t('yesS'))}${opt('room:no',G.room==='no','🏡',t('no'),t('noS'))}</div>${G.room==='yes'?`<div class="sub" style="margin:16px 0 0;text-align:center">${t('q6b')}</div><div class="stepper"><button onclick="G.nights=Math.max(1,G.nights-1);render()">−</button><div class="n">${G.nights}</div><button onclick="G.nights=Math.min(7,G.nights+1);render()">+</button></div>`:''}`;
+  case 6:return `<div class="q">${t('q7')}</div><div class="sub">&nbsp;</div><div class="opts">${opt('food:veg',G.food==='veg','🥗',t('veg'))}${opt('food:nonveg',G.food==='nonveg','🍗',t('nonveg'))}${opt('food:jain',G.food==='jain','🌱',t('jain'))}</div>`;
+  case 7:return `<div class="q">${t('q8')}</div><div class="sub">${t('s8')}</div><input class="big" id="in" type="tel" inputmode="tel" placeholder="${t('p8')}" value="${esc(G.phone)}" autocomplete="tel" oninput="G.phone=this.value;chk()">`;
+  }
+}
+function ok(){return [G.name.trim().length>1,true,!!G.side,G.events.length>0,G.city.trim().length>1,!!G.room,!!G.food,G.phone.replace(/\D/g,'').length>=8][step];}
+function chk(){const b=document.getElementById('next');if(b)b.disabled=!ok();}
+function pick(v){const [k,val]=v.split(':');
+  if(k==='ev'){G.events=G.events.includes(val)?G.events.filter(x=>x!==val):[...G.events,val];}
+  else if(k==='side')G.side=val; else if(k==='room')G.room=val; else if(k==='food')G.food=val;
+  render(); if(k!=='ev'||G.events.length===2) setTimeout(next,260);
+}
+function render(){
+  petals();
+  document.getElementById('langBtn').textContent={en:'EN · हि · म',hi:'हि · म · EN',mr:'म · EN · हि'}[lang];
+  const last=step===STEPS-1;
+  document.getElementById('stage').innerHTML=`<div class="step on">${view()}
+    <div class="nav">${step>0?`<button class="btn ghost" onclick="back()">${t('back')}</button>`:''}<button class="btn" id="next" onclick="${last?'submit()':'next()'}" ${ok()?'':'disabled'}>${last?t('done'):t('next')}</button></div>
+    ${step===0&&total!==null?`<div class="count">${total} ${t('counter')}</div>`:''}</div>`;
+  const i=document.getElementById('in'); if(i&&step!==0) setTimeout(()=>i.focus(),120);
+  document.addEventListener('keydown',enter);
+}
+function enter(e){if(e.key==='Enter'&&ok()){e.preventDefault();step===STEPS-1?submit():next();}}
+function next(){if(!ok())return;step=Math.min(STEPS-1,step+1);sayIt(step,true);render();}
+function back(){step=Math.max(0,step-1);sayIt(step);render();}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+
+async function submit(){
+  if(!ok())return;
+  const b=document.getElementById('next');b.disabled=true;b.textContent=t('saving');
+  const payload={p_code:WEDDING_CODE,p_name:G.name.trim(),p_pax:G.pax,p_side:G.side,p_events:G.events.join(','),p_city:G.city.trim(),p_room:G.room==='yes',p_nights:G.room==='yes'?G.nights:0,p_food:G.food,p_phone:G.phone.trim(),p_lang:lang};
+  let no=null;
+  try{ if(!sb)throw new Error('no client'); const {data,error}=await sb.rpc('add_guest',payload); if(error)throw error; no=data; }
+  catch(e){ console.warn(e); b.disabled=false;b.textContent=t('done'); document.getElementById('say').textContent=t('err'); return; }
+  localStorage.setItem('yg_done',JSON.stringify({no,g:G}));
+  showDone(no);
+}
+function showDone(no){
+  step=STEPS;petals();sayIt(7,true);confetti();
+  const ev=G.events.map(e=>e==='nashik'?t('na'):t('bh')).join(' · ');
+  const wa=encodeURIComponent(`Roma & Prashant ki shaadi 🌼 ${location.origin+location.pathname}`);
+  document.getElementById('stage').innerHTML=`<div class="step on done">
+    <div class="big serif">${t('d1')}</div>
+    <div class="num">${t('d2')} ${no||'✓'}</div>
+    <div class="sub">${t('d3')}</div>
+    <div class="card"><div class="r"><span>${t('g')}</span><span>${esc(G.name)}${G.pax>1?' +'+(G.pax-1):''}</span></div><div class="r"><span>📍</span><span>${ev}</span></div>${G.room==='yes'?`<div class="r"><span>🛏️</span><span>${G.nights} 🌙 Nashik</span></div>`:''}<div class="r"><span>🍽️</span><span>${t(G.food)}</span></div></div>
+    <div class="links"><a href="https://wa.me/?text=${wa}" target="_blank">💬 <b>${t('share')}</b></a><a href="./guest.html">🗓️ <b>${t('cal')}</b></a></div></div>`;
+}
+
+/* ───────── confetti (marigold + rose petals) ───────── */
+function confetti(){
+  const c=document.getElementById('fx'),x=c.getContext('2d');c.width=innerWidth;c.height=innerHeight;
+  const cols=['#f0a338','#ffd98a','#e8a5b4','#f4c2c2','#5fae5a','#d4893a'];
+  const P=Array.from({length:140},()=>({x:Math.random()*c.width,y:-20-Math.random()*c.height*.5,r:4+Math.random()*6,vx:(Math.random()-.5)*1.4,vy:1.5+Math.random()*2.5,a:Math.random()*Math.PI,va:(Math.random()-.5)*.15,col:cols[Math.random()*cols.length|0]}));
+  let f=0;(function tick(){x.clearRect(0,0,c.width,c.height);let alive=false;for(const p of P){p.x+=p.vx+Math.sin(f/14+p.a)*.6;p.y+=p.vy;p.a+=p.va;if(p.y<c.height+20)alive=true;x.save();x.translate(p.x,p.y);x.rotate(p.a);x.fillStyle=p.col;x.beginPath();x.ellipse(0,0,p.r,p.r*.55,0,0,Math.PI*2);x.fill();x.restore();}f++;if(alive&&f<420)requestAnimationFrame(tick);else x.clearRect(0,0,c.width,c.height);})();
+}
+
+/* ───────── counter ───────── */
+async function loadCount(){ try{ if(!sb)return; const {data}=await sb.rpc('guest_count',{p_code:WEDDING_CODE}); if(typeof data==='number'){total=data; if(step===0)render();} }catch(e){} }
+
+/* ───────── admin (?admin) ───────── */
+async function admin(){
+  document.getElementById('flow').style.display='none';
+  const A=document.getElementById('admin');A.style.display='block';
+  let code=sessionStorage.getItem('yg_admin')||'';
+  if(!code){code=prompt('Family code')||'';if(!code)return;}
+  A.innerHTML='<h2>Guest list</h2><div class="sub">Loading…</div>';
+  let rows=[];
+  try{const {data,error}=await sb.rpc('list_guests',{p_code:WEDDING_CODE,p_admin:code});if(error)throw error;rows=data||[];sessionStorage.setItem('yg_admin',code);}
+  catch(e){sessionStorage.removeItem('yg_admin');A.innerHTML='<h2>Guest list</h2><div class="sub">Wrong code, or the database functions are not set up yet. See SETUP_GUESTBOOK.md.</div>';return;}
+  const pax=rows.reduce((s,r)=>s+(r.pax||0),0), rooms=rows.filter(r=>r.room).length, roomPax=rows.filter(r=>r.room).reduce((s,r)=>s+r.pax,0), veg=rows.filter(r=>r.food!=='nonveg').reduce((s,r)=>s+r.pax,0);
+  const nashik=rows.filter(r=>(r.events||'').includes('nashik')).reduce((s,r)=>s+r.pax,0), bhar=rows.filter(r=>(r.events||'').includes('bharatpur')).reduce((s,r)=>s+r.pax,0);
+  const csv=['name,pax,side,events,city,room,nights,food,phone,created'].concat(rows.map(r=>[r.name,r.pax,r.side,r.events,r.city,r.room?'yes':'no',r.nights,r.food,r.phone,r.created_at].map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(','))).join('\n');
+  A.innerHTML=`<h2>Guest list</h2>
+    <div class="stats"><div class="stat"><b>${rows.length}</b><span>${t('g')}</span></div><div class="stat"><b>${pax}</b><span>${t('pax')}</span></div><div class="stat"><b>${roomPax}</b><span>${t('rooms')} · ${rooms} grp</span></div><div class="stat"><b>${veg}</b><span>${t('vegs')}</span></div></div>
+    <div class="stats" style="grid-template-columns:1fr 1fr"><div class="stat"><b>${nashik}</b><span>Nashik 24 Dec</span></div><div class="stat"><b>${bhar}</b><span>Bharatpur 13 Dec</span></div></div>
+    <div class="toolbar"><input id="q" placeholder="Search name or city" oninput="filt()"><select id="f" onchange="filt()"><option value="">All</option><option value="room">Needs room</option><option value="nashik">Nashik</option><option value="bharatpur">Bharatpur</option><option value="roma">Roma side</option><option value="prashant">Prashant side</option></select></div>
+    <div class="toolbar"><button class="btn" onclick="dl()">Download CSV</button><button class="btn ghost" onclick="sessionStorage.removeItem('yg_admin');location.reload()">Lock</button></div>
+    <div class="gl" id="gl"></div>`;
+  window._rows=rows; window._csv=csv; filt();
+}
+function filt(){const q=(document.getElementById('q').value||'').toLowerCase(),f=document.getElementById('f').value;
+  const rows=window._rows.filter(r=>(!q||(r.name+' '+r.city).toLowerCase().includes(q))&&(!f||(f==='room'?r.room:f==='nashik'||f==='bharatpur'?(r.events||'').includes(f):r.side===f)));
+  document.getElementById('gl').innerHTML=rows.map(r=>`<div class="g"><div><b>${esc(r.name)}</b> <span class="tag ${r.side==='roma'?'n':r.side==='prashant'?'b':''}">${r.side}</span><small>${r.pax} ${t('pax')} · ${esc(r.city)} · ${r.food}${r.room?` · 🛏️ ${r.nights} nights`:''}<br><a href="https://wa.me/${String(r.phone).replace(/\D/g,'')}" style="color:var(--amber)">${esc(r.phone)}</a></small></div><div style="text-align:right"><span class="tag ${(r.events||'').includes('nashik')?'':'no'}">24 Dec</span><br><span class="tag ${(r.events||'').includes('bharatpur')?'':'no'}" style="margin-top:4px;display:inline-block">13 Dec</span></div></div>`).join('')||'<div class="sub">Nobody yet.</div>';}
+function dl(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([window._csv],{type:'text/csv'}));a.download='roma-prashant-guests.csv';a.click();}
+
+/* ───────── boot ───────── */
+if(location.search.includes('admin')){admin();}
+else{
+  const d=localStorage.getItem('yg_done');
+  if(d&&!location.search.includes('again')){try{const o=JSON.parse(d);Object.assign(G,o.g||{});showDone(o.no);document.getElementById('stage').insertAdjacentHTML('beforeend',`<div class="hint"><a href="?again" style="color:var(--dim)">Add another guest</a></div>`);}catch(e){render();}}
+  else{sayIt(0);render();loadCount();}
+}
+</script>
+</body>
+</html>
